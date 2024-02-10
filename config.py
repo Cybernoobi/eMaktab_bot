@@ -1,3 +1,4 @@
-DATABASE_NAME = './Cyber.DB'
+from decouple import config
 
-TG_API = '6863662911:AAG-85atPt5xZMvVLBFpwJzko8o65wKZEEA'
+DATABASE_NAME = config('DB_NAME')  # Write your name for db
+TG_API = config('TG_API')  # Write your token from telegram bot
