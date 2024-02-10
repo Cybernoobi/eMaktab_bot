@@ -4,20 +4,14 @@ from aiogram.types import Message
 # local
 from database import check_user_tg, add_tg_user, delete_user
 from config import TG_API, DATABASE_NAME
-from loger import start_loging
 
 
 async def on_startup(_):
-    print('Бот успешно запушен')
-    start_loging()
+    print('The bot has started')
 
 
 async def on_shutdown(_):
-    print('Бот был остоновлен')
-
-
-async def send_message(user_id: int, text: str):
-    await bot.send_message(user_id, text)
+    print('The bot is stopped')
 
 
 bot = Bot(TG_API)
@@ -44,16 +38,6 @@ async def start_command(message: Message):
 async def create_db(message: Message):
     user_id = message.from_user.id
     await delete_user(DATABASE_NAME, user_id)
-
-
-@dp.message_handler()
-async def main(message: Message):
-    if message.from_user.id == 5595813124:
-        user_id = 900237952  # Замените на актуальный user_id
-        await send_message(user_id, message.text)
-        await message.answer(text='Сообщение отправлено')
-    else:
-        print(message.text)
 
 
 if __name__ == '__main__':
