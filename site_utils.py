@@ -12,7 +12,7 @@ LOGIN_URL = 'https://login.emaktab.uz/'
 BASE_URL = 'https://emaktab.uz/'
 
 
-def emaktab_connect(login: str, password: str, user_id: int):
+async def emaktab_connect(db_name: str, user_id: int, login: str, password: str):
     # driver path
     os.environ['PATH'] += os.pathsep + r'.\msedgedriver.exe'
 
@@ -26,7 +26,7 @@ def emaktab_connect(login: str, password: str, user_id: int):
 
     driver.get(LOGIN_URL)
 
-    # Введите свои данные
+    # Enter your data
     wait = WebDriverWait(driver, 5)
 
     username_field = wait.until(EC.presence_of_element_located((By.NAME, 'login')))
@@ -35,23 +35,25 @@ def emaktab_connect(login: str, password: str, user_id: int):
     username_field.send_keys(login)
     password_field.send_keys(password)
 
-    # Нажмите кнопку регистрации
+    # Click registration button
     submit_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[data-test-id="login-button"]'))).click()
 
-    # Проверяем наличие сообщения об ошибке после нажатия на кнопку "Submit"
+    # Incorrect password or login
     try:
         error_message = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.message'))).text
-        return 'Проверьте правильность введенного логина или восстановите его на сайте'
+        return ('[RU] Проверьте правильность введенного логина или восстановите его на сайте\n'
+                '[UZ] Kiritilgan loginning to\'g\'riligini tekshiring yoki uni saytda tiklang')
     except:
         pass
 
     # Ждем загрузки страницы после входа
     try:
-        wait.until(EC.url_to_be(f'{BASE_URL}userfeed'))
+        wait.until(EC.url_to_be(BASE_URL + 'userfeed'))
         
-        add_emaktab(DATABASE_NAME, user_id, login, password)
+        await add_emaktab(db_name, user_id, login, password)
         
-        return 'Вы успешно вошли в аккаунт'
+        return ('[RU] Вы успешно вошли в аккаунт\n'
+                '[UZ] Siz hisob qaydnomasiga muvaffaqiyatli kirdingiz')
     except:
         return 'Не удалось загрузить страницу после входа'
     finally:

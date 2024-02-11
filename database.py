@@ -28,7 +28,7 @@ async def create_tables(db_name: str):
         CREATE TABLE IF NOT EXISTS emaktab(
             user_id INTEGER PRIMARY KEY REFERENCES tg_users(user_id),
             
-            login TEXT,
+            login TEXT UNIQUE,
             password TEXT
         );
     '''
