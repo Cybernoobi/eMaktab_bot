@@ -5,9 +5,9 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import Message
 
 # local
-from database import check_user_tg, add_tg_user, delete_user, check_user_emaktab
-from config import TG_API, DATABASE_NAME
-from site_utils import emaktab_connect
+from utils.database import check_user_tg, add_tg_user, delete_user, check_user_emaktab
+from utils.config import TG_API, DATABASE_NAME
+from utils.site_utils import emaktab_connect
 
 
 async def on_startup(_):
