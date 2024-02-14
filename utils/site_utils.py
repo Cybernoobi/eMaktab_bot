@@ -6,7 +6,7 @@ from selenium.webdriver.edge.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 
 # local
-from database import add_emaktab
+from utils.database import add_emaktab
 
 LOGIN_URL = 'https://login.emaktab.uz/'
 BASE_URL = 'https://emaktab.uz/'

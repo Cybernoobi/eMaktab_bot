@@ -73,7 +73,13 @@ async def add_emaktab(db_name: str, user_id: int, login: str, password: str):
     await commit_and_close(conn)
 
 
-async def delete_user(db_name: str, user_id: int):
+async def delete_tg_user(db_name: str, user_id: int):
     conn, cursor = await database_connect(db_name)
     await cursor.execute('DELETE FROM tg_users WHERE user_id = ?;', (user_id,))
+    await commit_and_close(conn)
+
+
+async def delete_emaktab_login(db_name: str, user_id: int):
+    conn, cursor = await database_connect(db_name)
+    await cursor.execute('DELETE FROM emaktab WHERE user_id = ?;', (user_id,))
     await commit_and_close(conn)

@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import Message
 
 # local
-from utils.database import check_user_tg, add_tg_user, delete_user, check_user_emaktab
+from utils.database import check_user_tg, add_tg_user, delete_tg_user, delete_emaktab_login, check_user_emaktab
 from utils.config import TG_API, DATABASE_NAME
 from utils.site_utils import emaktab_connect
 
@@ -36,21 +36,18 @@ async def start_command(message: Message):
     await message.answer(
         text=f'Добро пожаловать {full_name}.\nЭтот бот ещё в разработке, если есть вопросы пишите мне в лс @Cybernoobi')
 
-    if await check_user_tg(DATABASE_NAME, user_id):
-        await message.answer(text='Вы уже зарегистрированны')
-    else:
-        await message.answer(text='Идёт авторизация')
+    if not await check_user_tg(DATABASE_NAME, user_id):
         await add_tg_user(DATABASE_NAME, user_id, username, full_name)
 
 
 @dp.message_handler(commands=['delete'])
 async def del_user(message: Message):
-    user_id = message.from_user.id
-    await delete_user(DATABASE_NAME, user_id)
+    await delete_tg_user(DATABASE_NAME, message.from_user.id)
+    print(f'Пользователь {message.from_user.full_name} удалён')
 
 
 @dp.message_handler(commands=['login'])
-async def start_login(message: Message, state: FSMContext):
+async def start_login(message: Message):
     await message.reply("Введите свой логин")
     await LoginStates.waiting_for_login.set()
 
@@ -82,6 +79,12 @@ async def process_password(message: Message, state: FSMContext):
 [UZ] Ushbu hisob allaqachon bog'langan agar sizga yordam kerak bo'lsa, texnik yordamni yozing (ular tavsifda)''')
 
     await state.finish()  # clearing the state
+
+
+@dp.message_handler(commands=['logout'])
+async def logout_command(message: Message):
+    print(await delete_emaktab_login(DATABASE_NAME, message.from_user.id))
+    await message.answer(text='Вы удалены из базы')
 
 
 if __name__ == '__main__':
