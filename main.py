@@ -5,9 +5,12 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import Message
 
 # local
-from utils.database import check_user_tg, add_tg_user, delete_tg_user, delete_emaktab_login, check_user_emaktab
+from utils.database import check_user_tg, add_tg_user, delete_tg_user, delete_emaktab_login, check_user_emaktab, \
+    get_user_to_user_id
 from utils.config import TG_API, DATABASE_NAME
-from utils.site_utils import emaktab_connect
+from utils.site_utils import emaktab_connect, emaktab_get_mark
+
+from pprint import pprint
 
 
 async def on_startup(_):
@@ -83,8 +86,28 @@ async def process_password(message: Message, state: FSMContext):
 
 @dp.message_handler(commands=['logout'])
 async def logout_command(message: Message):
-    print(await delete_emaktab_login(DATABASE_NAME, message.from_user.id))
+    await delete_emaktab_login(DATABASE_NAME, message.from_user.id)
     await message.answer(text='Вы удалены из базы')
+
+
+@dp.message_handler(commands=['mark'])
+async def mark_command(message: Message):
+    result = await get_user_to_user_id(DATABASE_NAME, message.from_user.id)
+
+    if result is not None:
+        login = result[1]
+        password = result[2]
+
+        item = await emaktab_get_mark(login, password)
+        if item == 'Incorrect password':
+            await message.answer(
+                text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
+        elif item == 'Не удалось загрузить страницу после входа':
+            await message.answer(text='Не удалось загрузить страницу')
+        else:
+            await message.answer(text=item)
+    else:
+        await message.answer(text='Вы не зарегистрированы (/login)')
 
 
 if __name__ == '__main__':

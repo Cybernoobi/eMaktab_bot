@@ -1,5 +1,6 @@
 import aiosqlite
 from datetime import datetime
+from bs4 import BeautifulSoup
 
 
 async def database_connect(db_name: str):
@@ -83,3 +84,10 @@ async def delete_emaktab_login(db_name: str, user_id: int):
     conn, cursor = await database_connect(db_name)
     await cursor.execute('DELETE FROM emaktab WHERE user_id = ?;', (user_id,))
     await commit_and_close(conn)
+
+
+async def get_user_to_user_id(db_name: str, user_id: int):
+    conn, cursor = await database_connect(db_name)
+    await cursor.execute('SELECT * FROM emaktab WHERE user_id = ?;', (user_id,))
+    user = await cursor.fetchone()
+    return user
