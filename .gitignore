@@ -161,3 +161,4 @@ cython_debug/
 .idea/
 
 Cyber.DB
+utils/example.html
