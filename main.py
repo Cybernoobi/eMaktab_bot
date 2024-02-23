@@ -5,8 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import Message
 
 # local
-from utils.database import check_user_tg, add_tg_user, delete_tg_user, delete_emaktab_login, check_user_emaktab, \
-    get_user_to_user_id
+from utils.database import *
 from utils.config import TG_API, DATABASE_NAME
 from utils.site_utils import emaktab_connect, emaktab_get_mark
 
