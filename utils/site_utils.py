@@ -17,17 +17,24 @@ BASE_URL = 'https://emaktab.uz/'
 
 # Driver options
 options = Options()
-options.add_argument('--headless')
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
+
+
+# options.add_argument('--headless')
+# options.add_argument('--no-sandbox')
+# options.add_argument('--disable-dev-shm-usage')
 
 # Driver
-os.environ['PATH'] += os.pathsep + r'.\msedgedriver.exe'
-driver = webdriver.Edge(options=options)
+
+
+def connect_driver(url: str):
+    os.environ['PATH'] += os.pathsep + r'.\msedgedriver.exe'
+    driver = webdriver.Edge(options=options)
+    driver.get(url)
+    return driver
 
 
 async def emaktab_connect(db_name: str, user_id: int, login: str, password: str):
-    driver.get(LOGIN_URL)
+    driver = connect_driver(LOGIN_URL)
 
     # Enter your data
     wait = WebDriverWait(driver, 5)
@@ -64,7 +71,7 @@ async def emaktab_connect(db_name: str, user_id: int, login: str, password: str)
 
 
 async def emaktab_get_mark(login: str, password: str):
-    driver.get(LOGIN_URL)
+    driver = connect_driver(LOGIN_URL)
 
     # Enter your data
     wait = WebDriverWait(driver, 5)
@@ -91,34 +98,24 @@ async def emaktab_get_mark(login: str, password: str):
 
         html = BeautifulSoup(driver.page_source, "html.parser")
         wrapper = html.find('div', class_='O4Y1L')
-        marks = wrapper.find_all('div', class_='NmbeA')
+        marks_objects = wrapper.find_all('div', class_='NmbeA')
 
         result = []
 
-        for mark in marks:
-            # Извлекаем div-элементы с классом "H1xuJ"
-            divs_today = mark.find_all('div', class_='H1xuJ')
+        for mark_obj in marks_objects:
+            date = mark_obj.find('div', class_='H1xuJ')
+            marks = mark_obj.find_all('div', class_='Wgxhi')
+            for mark in marks:
+                subject = mark.find('div', class_='qZR20').text
+                subject_mark = mark.find('div', class_='h26OT ceyZF').text
+                subject_data = mark.find('div', class_='UDZhX').text
+                print(f'''
+                Предмет: {subject},
+                Оценка: {subject_mark},
+                Выставлено за: {subject_data}''')
 
-            # Проходимся по каждому div-элементу
-            for div_today in divs_today:
-                # Извлекаем текст из каждого div-элемента
-                date = div_today.text
-                # Извлекаем следующие элементы после div-элемента
-                div_sibling = div_today.find_next_sibling()
-                div_number = div_sibling.find('div', class_='Tnfcj').text.strip()
-                div_subject = div_sibling.find('div', class_='qZR20').text
-                div_description = div_sibling.find('div', class_='UDZhX').text
-                # Выводим извлеченные данные
-                print("Дата:", date)
-                print("Номер:", div_number)
-                print("Предмет:", div_subject)
-                print("Описание:", div_description)
-                print()  # Пустая строка для разделения
-
-        return result
 
     except Exception as e:
         return f'Ошибка: {e},\n{e.__class__},\n{e.args}'
     finally:
         driver.quit()
-
