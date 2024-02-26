@@ -24,8 +24,6 @@ options = Options()
 # options.add_argument('--disable-dev-shm-usage')
 
 # Driver
-
-
 def connect_driver(url: str):
     os.environ['PATH'] += os.pathsep + r'.\msedgedriver.exe'
     driver = webdriver.Edge(options=options)
