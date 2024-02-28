@@ -104,7 +104,8 @@ async def mark_command(message: Message):
         elif item == 'Не удалось загрузить страницу после входа':
             await message.answer(text='Не удалось загрузить страницу')
         else:
-            await message.answer(text='item')
+            await message.answer(text=item)
+            pprint(item)
     else:
         await message.answer(text='Вы не зарегистрированы (/login)')
 
