@@ -7,6 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from pprint import pprint
 
+import re
+
 # local
 from utils.database import add_emaktab
 
@@ -97,35 +99,24 @@ async def emaktab_get_mark(login: str, password: str):
             wrapper = html.find('div', class_='O4Y1L')
             marks_objects = wrapper.find_all('div', class_='NmbeA')
 
-            result = []
+            output = ""
 
-            for mark_obj in marks_objects:
-                date = mark_obj.find('div', class_='H1xuJ')
-                marks = mark_obj.find_all('div', class_='Wgxhi')
+            # Проходим по каждому блоку
+            for block in marks_objects:
+                date = block.find(class_='H1xuJ').text.strip()
+                output += f'Оценки за {date}:\n'
+                marks = block.find_all(class_='Wgxhi')
                 for mark in marks:
-                    subject = mark.find('div', class_='qZR20').text
-                    subject_mark = mark.find('div', class_='h26OT').text
-                    subject_data = mark.find('div', class_='UDZhX').text
+                    mark_subject = re.sub(r'[^\w\s\']', '', mark.find(class_='qZR20').text.strip())
+                    mark_value = re.sub(r'[^\w\s\']', '', mark.find(class_='h26OT').text.strip())
+                    mark_description = re.sub(r'[^\w\s\']', '', mark.find(class_='UDZhX').text.strip())
+                    output += f"  {mark_subject}: {mark_value} ({mark_description})\n"
 
-                    mark_info = {
-                        'Предмет': subject,
-                        'Оценка': subject_mark,
-                        'Выставлено за': subject_data
-                    }
-
-                    # Создаем словарь для каждой даты и оценки
-                    mark_data = {
-                        'Дата': date,
-                        'Оценки': mark_info
-                    }
-
-                    # Добавляем информацию об оценке в результат
-                    result.append(mark_data)
-
-            return result
+            return output
 
 
         except Exception as e:
             return f'Ошибка: {e},\n{e.__class__},\n{e.args}'
         finally:
             driver.quit()
+

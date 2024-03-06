@@ -101,11 +101,9 @@ async def mark_command(message: Message):
         if item == 'Incorrect password':
             await message.answer(
                 text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
-        elif item == 'Не удалось загрузить страницу после входа':
-            await message.answer(text='Не удалось загрузить страницу')
         else:
             await message.answer(text=item)
-            pprint(item)
+            # pprint(item)
     else:
         await message.answer(text='Вы не зарегистрированы (/login)')
 
