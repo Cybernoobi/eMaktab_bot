@@ -91,6 +91,7 @@ async def logout_command(message: Message):
 
 @dp.message_handler(commands=['mark'])
 async def mark_command(message: Message):
+    sent_message = await message.answer(text='⚡️')
     result = await get_user_to_user_id(DATABASE_NAME, message.from_user.id)
 
     if result is not None:
@@ -99,12 +100,15 @@ async def mark_command(message: Message):
 
         item = await emaktab_get_mark(login, password)
         if item == 'Incorrect password':
+            await sent_message.delete()
             await message.answer(
                 text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
         else:
+            await sent_message.delete()
             await message.answer(text=item)
             # pprint(item)
     else:
+        await sent_message.delete()
         await message.answer(text='Вы не зарегистрированы (/login)')
 
 
