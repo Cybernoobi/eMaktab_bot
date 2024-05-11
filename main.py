@@ -7,7 +7,7 @@ from aiogram.types import Message
 # local
 from utils.database import *
 from utils.config import TG_API, DATABASE_NAME
-from utils.site_utils import emaktab_connect, emaktab_get_mark
+from utils.site_utils import emaktab_connect, emaktab_get_mark, emaktab_get_average_score
 
 from pprint import pprint
 
@@ -111,6 +111,28 @@ async def mark_command(message: Message):
         await sent_message.delete()
         await message.answer(text='Вы не зарегистрированы (/login)')
 
+
+@dp.message_handler(commands=['average_score'])
+async def average_score(message: Message):
+    sent_message = await message.answer(text='⚡️')
+    result = await get_user_to_user_id(DATABASE_NAME, message.from_user.id)
+
+    if result is not None:
+        login = result[1]
+        password = result[2]
+
+        item = await emaktab_get_average_score(login, password, 1)
+        if item == 'Incorrect password':
+            await sent_message.delete()
+            await message.answer(
+                text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
+        else:
+            await sent_message.delete()
+            await message.answer(text=item)
+            # pprint(item)
+    else:
+        await sent_message.delete()
+        await message.answer(text='Вы не зарегистрированы (/login)')
 
 if __name__ == '__main__':
     executor.start_polling(dp,

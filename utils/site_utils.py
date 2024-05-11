@@ -17,15 +17,29 @@ LOGIN_URL = 'https://login.emaktab.uz/'
 BASE_URL = 'https://emaktab.uz/'
 
 
+# Click for quarter
+async def click_quarter(quarter, driver):
+    try:
+        # Находим элементы четвертей
+        quarters = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'sF2Bq')))
+        quarter_index = int(quarter) - 1
+
+        # Кликаем на нужную четверть
+        quarters[quarter_index].click()
+
+    except Exception as e:
+        print(f'Ошибка при клике на четверть: {e}')
+
+
 # Driver
 async def connect_driver(url: str):
     import os
 
     # Driver options
     options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    # options.add_argument('--headless')
+    # options.add_argument('--no-sandbox')
+    # options.add_argument('--disable-dev-shm-usage')
 
     os.environ['PATH'] += os.pathsep + r'.\msedgedriver.exe'
     driver = webdriver.Edge(options=options)
@@ -33,6 +47,7 @@ async def connect_driver(url: str):
     return driver
 
 
+# Auto site login
 async def site_login(driver: webdriver, login: str, password: str):
     # Enter your data
     wait = WebDriverWait(driver, 5)
@@ -59,7 +74,6 @@ async def site_login(driver: webdriver, login: str, password: str):
         wait.until(EC.url_to_be(BASE_URL + 'userfeed'))
         return driver
     except:
-        print('Error 404')
         return 'Error 404'
 
 
@@ -120,3 +134,41 @@ async def emaktab_get_mark(login: str, password: str):
         finally:
             driver.quit()
 
+
+async def emaktab_get_average_score(login: str, password: str, quart: int):
+    browser = await connect_driver(LOGIN_URL)
+    driver = await site_login(browser, login, password)
+
+    if driver == 'Error 404':
+        return 'Error 404'
+
+    elif driver == 'Incorrect password':
+        return ('[RU] Проверьте правильность введенного логина или восстановите его на сайте\n'
+                '[UZ] Kiritilgan loginning to\'g\'riligini tekshiring yoki uni saytda tiklang')
+
+    else:
+        # Ждем загрузки страницы после входа
+        try:
+            driver.get(BASE_URL + 'marks')
+
+            wait = WebDriverWait(driver, 15)
+            wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.XZC4H[data-test-id="tab-period"]'))).click()
+
+            # driver.find_element(By.CSS_SELECTOR, 'div.XZC4H[data-test-id="tab-period"]').click()
+            await click_quarter(quart, driver)
+
+            html = BeautifulSoup(driver.page_source, "html.parser")
+            wrapper = html.find('table', class_='Tamh1')
+
+            pprint(html)
+
+            output = "1"
+
+            return output
+
+
+        except Exception as e:
+            return f'Ошибка: {e},\n{e.__class__},\n{e.args}'
+        finally:
+            driver.quit()
