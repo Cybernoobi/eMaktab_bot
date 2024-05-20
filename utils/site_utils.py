@@ -17,6 +17,11 @@ LOGIN_URL = 'https://login.emaktab.uz/'
 BASE_URL = 'https://emaktab.uz/'
 
 
+# Check for errors
+async def check_erors_site(driver):
+    return 'Incorrect password' if driver == 'Incorrect password' else 'Error 404' if driver == 'Error 404' else driver
+
+
 # Click for quarter
 async def click_quarter(quarter, driver):
     try:
@@ -49,7 +54,6 @@ async def connect_driver(url: str):
 
 # Auto site login
 async def site_login(driver: webdriver, login: str, password: str):
-    # Enter your data
     wait = WebDriverWait(driver, 5)
 
     username_field = wait.until(EC.presence_of_element_located((By.NAME, 'login')))
@@ -64,12 +68,10 @@ async def site_login(driver: webdriver, login: str, password: str):
     # Incorrect password or login
     try:
         error_message = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.message'))).text
-        print('Incorrect password')
         return 'Incorrect password'
     except:
         pass
 
-    # Ждем загрузки страницы после входа
     try:
         wait.until(EC.url_to_be(BASE_URL + 'userfeed'))
         return driver
@@ -102,8 +104,7 @@ async def emaktab_get_mark(login: str, password: str):
         return 'Error 404'
 
     elif driver == 'Incorrect password':
-        return ('[RU] Проверьте правильность введенного логина или восстановите его на сайте\n'
-                '[UZ] Kiritilgan loginning to\'g\'riligini tekshiring yoki uni saytda tiklang')
+        return 'Incorrect password'
 
     else:
 
@@ -136,39 +137,37 @@ async def emaktab_get_mark(login: str, password: str):
 
 
 async def emaktab_get_average_score(login: str, password: str, quart: int):
-    browser = await connect_driver(LOGIN_URL)
-    driver = await site_login(browser, login, password)
+    try:
+        # Устанавливаем соединение и выполняем вход
+        browser = await connect_driver(LOGIN_URL)
+        driver = await site_login(browser, login, password)
 
-    if driver == 'Error 404':
-        return 'Error 404'
+        if driver == 'Error 404':
+            return 'Error 404'
 
-    elif driver == 'Incorrect password':
-        return ('[RU] Проверьте правильность введенного логина или восстановите его на сайте\n'
-                '[UZ] Kiritilgan loginning to\'g\'riligini tekshiring yoki uni saytda tiklang')
+        elif driver == 'Incorrect password':
+            return 'Incorrect password'
 
-    else:
-        # Ждем загрузки страницы после входа
-        try:
+        else:
+            # Переходим на страницу с оценками
             driver.get(BASE_URL + 'marks')
 
+            # Кликаем на нужную четверть
             wait = WebDriverWait(driver, 15)
-            wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.XZC4H[data-test-id="tab-period"]'))).click()
-
-            # driver.find_element(By.CSS_SELECTOR, 'div.XZC4H[data-test-id="tab-period"]').click()
+            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.XZC4H[data-test-id="tab-period"]'))).click()
             await click_quarter(quart, driver)
 
+            # Парсим страницу с оценками
             html = BeautifulSoup(driver.page_source, "html.parser")
             wrapper = html.find('table', class_='Tamh1')
-
             pprint(html)
 
             output = "1"
 
             return output
 
+    except Exception as e:
+        return f'Ошибка: {e},\n{e.__class__},\n{e.args}'
 
-        except Exception as e:
-            return f'Ошибка: {e},\n{e.__class__},\n{e.args}'
-        finally:
-            driver.quit()
+    finally:
+        driver.quit()

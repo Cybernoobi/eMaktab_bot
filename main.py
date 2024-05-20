@@ -126,6 +126,9 @@ async def average_score(message: Message):
             await sent_message.delete()
             await message.answer(
                 text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
+        elif item == 'Error 404':
+            await sent_message.delete()
+            await message.answer(text='Сайт временно не отвечает')
         else:
             await sent_message.delete()
             await message.answer(text=item)
