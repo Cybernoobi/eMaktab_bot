@@ -17,11 +17,6 @@ LOGIN_URL = 'https://login.emaktab.uz/'
 BASE_URL = 'https://emaktab.uz/'
 
 
-# Check for errors
-async def check_erors_site(driver):
-    return 'Incorrect password' if driver == 'Incorrect password' else 'Error 404' if driver == 'Error 404' else driver
-
-
 # Click for quarter
 async def click_quarter(quarter, driver):
     try:
@@ -54,7 +49,7 @@ async def connect_driver(url: str):
 
 # Auto site login
 async def site_login(driver: webdriver, login: str, password: str):
-    wait = WebDriverWait(driver, 5)
+    wait = WebDriverWait(driver, 0)
 
     username_field = wait.until(EC.presence_of_element_located((By.NAME, 'login')))
     password_field = wait.until(EC.presence_of_element_located((By.NAME, 'password')))
@@ -119,7 +114,7 @@ async def emaktab_get_mark(login: str, password: str):
             # Проходим по каждому блоку
             for block in marks_objects:
                 date = block.find(class_='H1xuJ').text.strip()
-                output += f'Оценки за {date}:\n'
+                output += f'\nОценки за {date}:\n'
                 marks = block.find_all(class_='Wgxhi')
                 for mark in marks:
                     mark_subject = re.sub(r'[^\w\s\']', '', mark.find(class_='qZR20').text.strip())
@@ -137,18 +132,17 @@ async def emaktab_get_mark(login: str, password: str):
 
 
 async def emaktab_get_average_score(login: str, password: str, quart: int):
-    try:
-        # Устанавливаем соединение и выполняем вход
-        browser = await connect_driver(LOGIN_URL)
-        driver = await site_login(browser, login, password)
+    browser = await connect_driver(LOGIN_URL)
+    driver = await site_login(browser, login, password)
 
-        if driver == 'Error 404':
-            return 'Error 404'
+    if driver == 'Error 404':
+        return 'Error 404'
 
-        elif driver == 'Incorrect password':
-            return 'Incorrect password'
+    elif driver == 'Incorrect password':
+        return 'Incorrect password'
 
-        else:
+    else:
+        try:
             # Переходим на страницу с оценками
             driver.get(BASE_URL + 'marks')
 
@@ -157,17 +151,39 @@ async def emaktab_get_average_score(login: str, password: str, quart: int):
             wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.XZC4H[data-test-id="tab-period"]'))).click()
             await click_quarter(quart, driver)
 
+            # Ожидаем загрузки таблицы с оценками
+            wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'Tamh1')))
+
             # Парсим страницу с оценками
             html = BeautifulSoup(driver.page_source, "html.parser")
-            wrapper = html.find('table', class_='Tamh1')
-            pprint(html)
+            wrapper = html.select('table.Tamh1 tbody tr')
 
-            output = "1"
+            results = []
+            output = ""
+
+            for subject in wrapper:
+                subject_name = subject.select_one('.c8D3G').text.strip()
+                marks = [mark.text.strip() for mark in subject.select('[data-test-id^="work_mark"]')]
+                average_score = subject.select_one('td:nth-of-type(3)').text.strip()
+                quarter_score = subject.select_one('td:nth-of-type(4)').text.strip()
+
+                results.append({
+                    'subject': subject_name,
+                    'marks': marks,
+                    'average_score': average_score,
+                    'quarter_score': quarter_score
+                })
+
+            for result in results:
+                marks_str = ', '.join(result['marks'])
+                output += (
+                    f"{result['subject']}: {marks_str} | Ср. балл: {result['average_score']} | Четверть: {result['quarter_score']}\n"
+                )
 
             return output
 
-    except Exception as e:
-        return f'Ошибка: {e},\n{e.__class__},\n{e.args}'
+        except Exception as e:
+            return f'Ошибка: {e},\n{e.__class__},\n{e.args}'
 
-    finally:
-        driver.quit()
+        finally:
+            driver.quit()
