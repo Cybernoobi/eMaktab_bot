@@ -37,9 +37,9 @@ async def connect_driver(url: str):
 
     # Driver options
     options = Options()
-    # options.add_argument('--headless')
-    # options.add_argument('--no-sandbox')
-    # options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
 
     os.environ['PATH'] += os.pathsep + r'.\msedgedriver.exe'
     driver = webdriver.Edge(options=options)
