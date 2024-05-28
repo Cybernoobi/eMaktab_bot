@@ -2,7 +2,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram import Dispatcher, Bot, executor
 from aiogram.dispatcher import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 # local
 from utils.database import *
@@ -117,25 +117,47 @@ async def average_score(message: Message):
     sent_message = await message.answer(text='⚡️')
     result = await get_user_to_user_id(DATABASE_NAME, message.from_user.id)
 
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        InlineKeyboardButton("1-ая четверть", callback_data='1'),
+        InlineKeyboardButton("2-ая четверть", callback_data='2'),
+        InlineKeyboardButton("3-ая четверть", callback_data='3'),
+        InlineKeyboardButton("4-ая четверть", callback_data='4'),
+        InlineKeyboardButton("Итоги", callback_data='5')
+    )
+
+    await message.reply("Выберите четверть:", reply_markup=keyboard)
+
+
+@dp.callback_query_handler()
+async def process_callback(callback_query: CallbackQuery):
+    sent_message = await bot.send_message(callback_query.from_user.id, '⚡️')
+    result = await get_user_to_user_id(DATABASE_NAME, callback_query.from_user.id)
+
+    # Получаем данные из нажатой кнопки
+    # button_data = callback_query.data
+    # await bot.send_message(callback_query.from_user.id, f"Вы нажали кнопку: {button_data}")
+
     if result is not None:
         login = result[1]
         password = result[2]
 
-        item = await emaktab_get_average_score(login, password, 1)
+        item = await emaktab_get_average_score(login, password, int(callback_query.data))
         if item == 'Incorrect password':
             await sent_message.delete()
-            await message.answer(
-                text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
+            await bot.send_message(callback_query.from_user.id,
+                                   text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
         elif item == 'Error 404':
             await sent_message.delete()
-            await message.answer(text='Сайт временно не отвечает')
+            await bot.send_message(callback_query.from_user.id, text='Сайт временно не отвечает')
         else:
             await sent_message.delete()
-            await message.answer(text=item)
+            await bot.send_message(callback_query.from_user.id, text=item)
             # pprint(item)
     else:
         await sent_message.delete()
-        await message.answer(text='Вы не зарегистрированы (/login)')
+        await bot.send_message(callback_query.from_user.id, text='Вы не зарегистрированы (/login)')
+
 
 if __name__ == '__main__':
     executor.start_polling(dp,

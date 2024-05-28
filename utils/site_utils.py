@@ -161,24 +161,66 @@ async def emaktab_get_average_score(login: str, password: str, quart: int):
             results = []
             output = ""
 
-            for subject in wrapper:
-                subject_name = subject.select_one('.c8D3G').text.strip()
-                marks = [mark.text.strip() for mark in subject.select('[data-test-id^="work_mark"]')]
-                average_score = subject.select_one('td:nth-of-type(3)').text.strip()
-                quarter_score = subject.select_one('td:nth-of-type(4)').text.strip()
+            if quart <= 4:
+                for subject in wrapper:
+                    subject_name = subject.select_one('.c8D3G').text.strip()
+                    marks = [mark.text.strip() for mark in subject.select('[data-test-id^="work_mark"]')]
+                    average_score = subject.select_one('td:nth-of-type(3)').text.strip()
+                    quarter_score = subject.select_one('td:nth-of-type(4)').text.strip()
 
-                results.append({
-                    'subject': subject_name,
-                    'marks': marks,
-                    'average_score': average_score,
-                    'quarter_score': quarter_score
-                })
+                    results.append({
+                        'subject': subject_name,
+                        'marks': marks,
+                        'average_score': average_score,
+                        'quarter_score': quarter_score
+                    })
 
-            for result in results:
-                marks_str = ', '.join(result['marks'])
-                output += (
-                    f"{result['subject']}: {marks_str} | Ср. балл: {result['average_score']} | Четверть: {result['quarter_score']}\n"
-                )
+                for result in results:
+                    marks_str = ', '.join(result['marks'])
+                    output += (
+                        f"\n{result['subject']}: Ср. балл: {result['average_score']} | Четверть: {result['quarter_score']}\n" # {marks_str} |
+                    )
+
+                return output
+            else:
+                # Проход по каждой строке с данными предметов
+                for subject in wrapper:
+                    subject_name = subject.select_one('.c8D3G').text.strip() if subject.select_one(
+                        '.c8D3G') else 'Нет названия'
+
+                    # Извлекаем оценки за четверти и годовую оценку с проверкой на наличие
+                    first_quarter = subject.select_one('[data-test-id*="final-mark_period-"][data-test-id$="_0"]')
+                    first_quarter = first_quarter.text.strip() if first_quarter else "-"
+
+                    second_quarter = subject.select_one('[data-test-id*="final-mark_period-"][data-test-id$="_1"]')
+                    second_quarter = second_quarter.text.strip() if second_quarter else "-"
+
+                    third_quarter = subject.select_one('[data-test-id*="final-mark_period-"][data-test-id$="_2"]')
+                    third_quarter = third_quarter.text.strip() if third_quarter else "-"
+
+                    fourth_quarter = subject.select_one('[data-test-id*="final-mark_period-"][data-test-id$="_3"]')
+                    fourth_quarter = fourth_quarter.text.strip() if fourth_quarter else "-"
+
+                    year_mark = subject.select_one('[data-test-id^="final-year"]')
+                    year_mark = year_mark.text.strip() if year_mark else "-"
+
+                    exam_mark_tag = subject.select_one('[data-test-id^="final-exam"]')
+                    exam_mark = exam_mark_tag.text.strip() if exam_mark_tag else "-"
+
+                    final_mark = subject.select_one('[data-test-id^="final-final"]')
+                    final_mark = final_mark.text.strip() if final_mark else "-"
+
+                    # Формируем строку для текущего предмета
+                    output += f"""
+{subject_name}: 
+    1 четверть: {first_quarter}
+    2 четверть: {second_quarter}
+    3 четверть: {third_quarter}
+    4 четверть: {fourth_quarter}
+    За год: {year_mark}
+    Экзамен: {exam_mark}
+    Итог: {final_mark}
+"""
 
             return output
 
