@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.edge.options import Options
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup
@@ -33,16 +33,22 @@ async def click_quarter(quarter, driver):
 
 # Driver
 async def connect_driver(url: str):
+    from sys import platform
     import os
 
     # Driver options
     options = Options()
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
+    options.add_argument('--incognito')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
 
-    os.environ['PATH'] += os.pathsep + r'.\msedgedriver.exe'
-    driver = webdriver.Edge(options=options)
+    if platform == 'win32':
+        os.environ['PATH'] += os.pathsep + r'.\drivers\chromewindows.exe'
+    elif platform in ['linux', 'linux2']:
+        os.environ['PATH'] += os.pathsep + r'./drivers/chromelinux'
+
+    driver = webdriver.Chrome(options=options)
     driver.get(url)
     return driver
 

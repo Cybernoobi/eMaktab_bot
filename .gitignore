@@ -163,3 +163,5 @@ cython_debug/
 Cyber.DB
 utils/example.html
 example.html
+.env
+test.py
