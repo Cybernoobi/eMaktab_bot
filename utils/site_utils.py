@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 from bs4 import BeautifulSoup
 from pprint import pprint
@@ -10,7 +11,7 @@ from pprint import pprint
 import re
 
 # local
-from utils.database import add_emaktab
+from utils.database.requests import get_emaktab
 
 # links
 LOGIN_URL = 'https://login.emaktab.uz/'
@@ -38,7 +39,7 @@ async def connect_driver(url: str):
 
     # Driver options
     options = Options()
-    # options.add_argument('--headless')
+    options.add_argument('--headless')
     options.add_argument('--incognito')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
@@ -70,17 +71,15 @@ async def site_login(driver: webdriver, login: str, password: str):
     try:
         error_message = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.message'))).text
         return 'Incorrect password'
-    except:
-        pass
-
-    try:
-        wait.until(EC.url_to_be(BASE_URL + 'userfeed'))
-        return driver
-    except:
-        return 'Error 404'
+    except TimeoutException:
+        try:
+            wait.until(EC.url_to_be(BASE_URL + 'userfeed'))
+            return driver
+        except Exception:
+            return 'Error 404'
 
 
-async def emaktab_connect(db_name: str, user_id: int, login: str, password: str):
+async def emaktab_connect(user_id: int, login: str, password: str):
     browser = await connect_driver(LOGIN_URL)
     driver = await site_login(browser, login, password)
 
@@ -92,9 +91,11 @@ async def emaktab_connect(db_name: str, user_id: int, login: str, password: str)
                 '[UZ] Kiritilgan loginning to\'g\'riligini tekshiring yoki uni saytda tiklang')
 
     else:
-        await add_emaktab(db_name, user_id, login, password)
-        return ('[RU] Вы успешно вошли в аккаунт\n'
-                '[UZ] Siz hisob qaydnomasiga muvaffaqiyatli kirdingiz')
+        if await get_emaktab(user_id, login, password, added=True) == 'success':
+            return ('[RU] Вы успешно вошли в аккаунт\n'
+                    '[UZ] Siz hisob qaydnomasiga muvaffaqiyatli kirdingiz')
+        else:
+            return 'Error'
 
 
 async def emaktab_get_mark(login: str, password: str):
@@ -184,7 +185,8 @@ async def emaktab_get_average_score(login: str, password: str, quart: int):
                 for result in results:
                     marks_str = ', '.join(result['marks'])
                     output += (
-                        f"\n{result['subject']}: Ср. балл: {result['average_score']} | Четверть: {result['quarter_score']}\n" # {marks_str} |
+                        f"\n{result['subject']}: Ср. балл: {result['average_score']} | Четверть: {result['quarter_score']}\n"
+                    # {marks_str} |
                     )
 
                 return output

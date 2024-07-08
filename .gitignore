@@ -1,3 +1,7 @@
+test.py
+*.lnk
+*.sqlite3
+
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -121,7 +125,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-utils/.env
+.env
 .venv
 env/
 venv/
@@ -159,9 +163,3 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
-
-Cyber.DB
-utils/example.html
-example.html
-.env
-test.py

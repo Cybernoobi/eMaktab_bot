@@ -11,9 +11,10 @@ from aiogram.fsm.context import FSMContext
 
 # Local
 import utils.keyboard as kb
-from utils.database import *
-from utils.site_utils import emaktab_connect, emaktab_get_mark, emaktab_get_average_score
-from utils.config import DATABASE_NAME
+from utils.database import requests as rq
+import utils.site_utils as su
+
+from pprint import pprint
 
 router = Router()
 
@@ -21,8 +22,6 @@ router = Router()
 class LoginStates(StatesGroup):
     waiting_for_login = State()
     waiting_for_password = State()
-
-
 
 
 # Start command
@@ -35,15 +34,14 @@ async def start_command(message: types.Message):
     await message.answer(
         text=f'Добро пожаловать {full_name}.\nЭтот бот ещё в разработке, если есть вопросы пишите мне в лс @Cybernoobi')
 
-    if not await check_user_tg(DATABASE_NAME, user_id):
-        await add_tg_user(DATABASE_NAME, user_id, username, full_name)
+    await rq.add_tg_user(user_id, full_name, username)
 
 
 # Delete telegram user command
-@router.message(Command('delete'))
-async def del_user(message: types.Message):
-    await delete_tg_user(DATABASE_NAME, message.from_user.id)
-    print(f'Пользователь {message.from_user.full_name} удалён')
+# @router.message(Command('delete'))
+# async def del_user(message: types.Message):
+#     await delete_tg_user(DATABASE_NAME, message.from_user.id)
+#     print(f'Пользователь {message.from_user.full_name} удалён')
 
 
 # Login eMaktab user
@@ -69,11 +67,10 @@ async def process_password(message: types.Message, state: FSMContext):
     login = data['login']
     password = data['password']
 
-    result = await check_user_emaktab(DATABASE_NAME, login)
+    if not await rq.get_emaktab(user_id, login, password):
+        result = await su.emaktab_connect(user_id, login, password)
 
-    if not result:
-        text = await emaktab_connect(DATABASE_NAME, user_id, login, password)
-        await message.answer(text=text)
+        await message.answer(text=result)
     else:
         await message.answer(text='''
 [RU] Эта учетная запись уже связана если вам нужна помощь, напишите в службу технической поддержки (они есть в описании)
@@ -85,21 +82,23 @@ async def process_password(message: types.Message, state: FSMContext):
 # Logout eMaktab user
 @router.message(Command('logout'))
 async def logout_command(message: types.Message):
-    await delete_emaktab_login(DATABASE_NAME, message.from_user.id)
-    await message.answer(text='Вы удалены из базы')
+    if await rq.get_emaktab(message.from_user.id, deleted=True) == 'success':
+        await message.answer(text='Вы удалены из базы')
+    else:
+        await message.answer(text='Произошла ошибка')
 
 
 # Get and print marks for eMaktab
 @router.message(Command('mark'))
 async def mark_command(message: types.Message):
     sent_message = await message.answer(text='⚡️')
-    result = await get_user_to_user_id(DATABASE_NAME, message.from_user.id)
+    result = await rq.get_emaktab(message.from_user.id)
 
-    if result is not None:
-        login = result[1]
-        password = result[2]
+    if result.login is not None:
+        login = result.login
+        password = result.password
 
-        item = await emaktab_get_mark(login, password)
+        item = await su.emaktab_get_mark(login, password)
         if item == 'Incorrect password':
             await sent_message.delete()
             await message.answer(
@@ -113,7 +112,7 @@ async def mark_command(message: types.Message):
         await message.answer(text='Вы не зарегистрированы (/login)')
 
 
-# Get and print average marks
+# Get and print average score
 @router.message(Command('average_score'))
 async def average_score(message: types.Message):
     await message.reply("Выберите четверть:", reply_markup=await kb.average_score_buttons())
@@ -122,17 +121,17 @@ async def average_score(message: types.Message):
 @router.callback_query()
 async def process_callback(callback_query: types.CallbackQuery):
     sent_message = await callback_query.message.answer('⚡️')
-    result = await get_user_to_user_id(DATABASE_NAME, callback_query.from_user.id)
+    result = await rq.get_emaktab(callback_query.from_user.id)
 
-    if result is not None:
-        login = result[1]
-        password = result[2]
+    if result.login is not None:
+        login = result.login
+        password = result.password
 
-        item = await emaktab_get_average_score(login, password, int(callback_query.data))
+        item = await su.emaktab_get_average_score(login, password, int(callback_query.data))
         if item == 'Incorrect password':
             await sent_message.delete()
             await callback_query.message.answer(
-                                   'Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
+                'Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
         elif item == 'Error 404':
             await sent_message.delete()
             await callback_query.message.answer('Сайт временно не отвечает')

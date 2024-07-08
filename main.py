@@ -1,7 +1,11 @@
 from aiogram import Bot, Dispatcher
+from aiogram.methods import DeleteWebhook
 from aiogram.fsm.storage.memory import MemoryStorage
 
+
 # local
+from utils.database.models import async_main
+from utils.database import requests as rq
 from utils.config import TG_API
 from utils.hendlers import router
 
@@ -14,12 +18,12 @@ async def on_shutdown(dispatcher: Dispatcher):
     print('The bot is stopped')
 
 
-bot = Bot(TG_API)
-dp = Dispatcher(storage=MemoryStorage())
-
-
 async def main():
+    await async_main()
+    bot = Bot(TG_API)
+    dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
+    await bot(DeleteWebhook(drop_pending_updates=True))
     await dp.start_polling(bot)
 
 
