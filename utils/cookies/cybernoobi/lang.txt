@@ -1,0 +1,1 @@
+{'domain': '.emaktab.uz', 'expirationDate': 1728553467.297811, 'hostOnly': False, 'httpOnly': False, 'name': 'Dnevnik_localization', 'path': '/', 'sameSite': 'None', 'secure': True, 'session': False, 'value': 'ru-RU'}
