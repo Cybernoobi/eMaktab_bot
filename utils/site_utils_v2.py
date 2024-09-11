@@ -1,8 +1,9 @@
 # Selenium
+import time
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -13,6 +14,8 @@ import re
 
 # local
 from utils.database.requests import get_emaktab
+from utils.save_cookies import CookiesManager
+
 
 def browser_connect():
     from sys import platform
@@ -55,19 +58,22 @@ def site_log(func, login: str = None, password: str = None, driver: webdriver.Ch
 
 
 class EmaktabManager:
-    def __init__(self, user_id: int, login: str, password: str):
+    def __init__(self, user_id: int, login: str = None, password: str = None):
         self.user_id = user_id
         self.login = login
         self.password = password
+
         self.driver = browser_connect()
+        self.BASE_URL = 'https://emaktab.uz/'
+        self.LOGIN_URL = 'https://login.emaktab.uz/'
 
     def close_driver(self):
         self.driver.close()
         self.driver.quit()
 
-    def site_login(self, func) -> str:
-        self.driver.get('https://login.emaktab.uz/')
-        wait = WebDriverWait(self.driver, 10)
+    def first_login(self):
+        self.driver.get(self.LOGIN_URL)
+        wait = WebDriverWait(self.driver, 25)
 
         login_form = wait.until(EC.presence_of_element_located((By.NAME, 'login')))
         password_form = wait.until(EC.presence_of_element_located((By.NAME, 'password')))
@@ -79,13 +85,30 @@ class EmaktabManager:
 
         result = None
         try:
-            if wait.until(EC.url_changes('https://emaktab.uz/userfeed')):
-                result = func(self.driver)
-        except TimeoutException:
-            result = 'error'
+            error = BeautifulSoup(self.driver.page_source, "html.parser").find(
+                class_='login__body__hint login__body__hint_error-message login__body__hint_hidden').text
 
-        self.driver.close()
-        return result
+            if error is not None:
+                if error in ['Parol yoki login notoʻgʻri koʻrsatilgan. Qaytadan urinib koʻring.',
+                             'Неправильно указан пароль или логин. Попробуйте еще раз.']:
+                    return 'incorrect password'
+                else:
+                    return error
+            else:
+                CookiesManager(self.login, self.driver.get_cookie('UZDnevnikAuth_a'))
+
+                if wait.until(EC.url_changes(self.BASE_URL + 'userfeed')):
+                    result = 'success'
+
+                elif wait.until(EC.url_changes(self.BASE_URL + 'biling')):
+                    result = 'not subscribe'
+
+        except TimeoutException as e:
+            result = 'error' + e.__str__() + 'siteV2'
+
+    def site_login(self, func) -> str:
+        self.driver.get(self.LOGIN_URL)
+
 
     def emaktab_connect(self, added: bool = False):
         @self.site_login
@@ -128,3 +151,9 @@ class EmaktabManager:
         def __coks(driver):
             from pprint import pprint
             pprint(driver.get_cookies())
+
+
+    def test(self):
+        self.driver.get(self.LOGIN_URL)
+        time.sleep(3)
+        print(BeautifulSoup(self.driver.page_source, "html.parser").find(class_='login__body__hint login__body__hint_error-message login__body__hint_hidden').text)
