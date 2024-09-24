@@ -30,6 +30,14 @@ class EmaktabUsers(CyberDataBase):
     password: Mapped[str] = mapped_column(String(50))
 
 
+class UserSettings(CyberDataBase):
+    __tablename__ = 'settings'
+
+    user_id: Mapped[int] = mapped_column(ForeignKey(UserTelegram.user_id), primary_key=True)
+    language: Mapped[str] = mapped_column(String(5), server_default='ru-RU')
+    account_type: Mapped[str] = mapped_column(String(25), server_default='student')  # student, parent, teacher
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(CyberDataBase.metadata.create_all)
