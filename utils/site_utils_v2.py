@@ -14,7 +14,10 @@ import re
 
 # local
 from utils.database.requests import get_emaktab
-from utils.save_cookies import CookiesManager
+from utils.other_utils import CookiesManager
+from utils.config import DEBUG
+from utils import (IncorrectLoginOrPasswordError, NotSubscribedError,
+                   TemporaryPasswordError, UserDataIsNoneError, CaptchaError)
 
 
 def browser_connect():
@@ -23,9 +26,15 @@ def browser_connect():
 
     # Driver options
     options = Options()
-    # options.add_argument('--headless')
-    options.add_argument('--incognito')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
+
+    if DEBUG is False:
+        options.add_argument('--headless')
+
     options.add_argument('--no-sandbox')
+    options.add_argument('--disable-infobars')
     options.add_argument('--disable-dev-shm-usage')
 
     if platform == 'win32':
@@ -34,6 +43,15 @@ def browser_connect():
         os.environ['PATH'] += r'./drivers/chromelinux'
 
     driver = webdriver.Chrome(options=options)
+    driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+        'source': '''
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_JSON;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Object;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Proxy;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+            '''})
 
     return driver
 
@@ -58,7 +76,7 @@ def site_log(func, login: str = None, password: str = None, driver: webdriver.Ch
 
 
 class EmaktabManager:
-    def __init__(self, user_id: int, login: str = None, password: str = None):
+    def __init__(self, user_id: int = None, login: str = None, password: str = None):
         self.user_id = user_id
         self.login = login
         self.password = password
@@ -72,6 +90,9 @@ class EmaktabManager:
         self.driver.quit()
 
     def first_login(self):
+        if self.user_id is None and self.login is None and self.password is None:
+            raise UserDataIsNoneError("Нет данных для входа")
+
         self.driver.get(self.LOGIN_URL)
         wait = WebDriverWait(self.driver, 25)
 
@@ -83,32 +104,58 @@ class EmaktabManager:
 
         self.driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
 
-        result = None
+        soup = BeautifulSoup(self.driver.page_source, 'html.parser').find(name='input',
+                                                                          class_='input_captcha-validation')
+
+        if soup is not None:
+            import nopecha
+            text = nopecha.Recognition.solve(
+                type='textcaptcha',
+                image_urls=[self.driver.find_element(
+                    By.CSS_SELECTOR, 'img[alt="captcha image"]').get_attribute('src')],
+            )
+
+            try:
+                self.driver.find_element(By.NAME, 'Captcha.Input').send_keys(text['data'][0])
+                self.driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+            except KeyError:
+                raise CaptchaError(f"Каптча не было пройдена - error:{text['error']} text:{text['message']}")
+
         try:
-            error = BeautifulSoup(self.driver.page_source, "html.parser").find(
-                class_='login__body__hint login__body__hint_error-message login__body__hint_hidden').text
+            error = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.message')))
 
             if error is not None:
-                if error in ['Parol yoki login notoʻgʻri koʻrsatilgan. Qaytadan urinib koʻring.',
-                             'Неправильно указан пароль или логин. Попробуйте еще раз.']:
-                    return 'incorrect password'
+                if error.text.strip() in ['Parol yoki login notoʻgʻri koʻrsatilgan. Qaytadan urinib koʻring.',
+                                          'Неправильно указан пароль или логин. Попробуйте еще раз.']:
+                    raise IncorrectLoginOrPasswordError("Введен неправильный логин или пароль")
                 else:
-                    return error
-            else:
-                CookiesManager(self.login, self.driver.get_cookie('UZDnevnikAuth_a'))
+                    return error.text
 
-                if wait.until(EC.url_changes(self.BASE_URL + 'userfeed')):
-                    result = 'success'
+        except Exception as e:
+            return e
 
-                elif wait.until(EC.url_changes(self.BASE_URL + 'biling')):
-                    result = 'not subscribe'
+        CookiesManager(self.login, self.driver.get_cookie('UZDnevnikAuth_a')).save_cookie()
 
-        except TimeoutException as e:
-            result = 'error' + e.__str__() + 'siteV2'
+        if wait.until(EC.url_to_be(self.BASE_URL + 'userfeed')):
+            return True
+
+        elif wait.until(EC.url_to_be(self.BASE_URL + 'billing')):
+            raise NotSubscribedError("Отсутствует базовая подписка eMaktab")
+
+        elif re.search(r'password\?login=.*&token=.*', self.driver.current_url):
+            print('start')
+
+            new_password = 'uz_emaktab_robot'
+
+            wait.until(EC.presence_of_element_located((By.NAME, 'Password'))).send_keys(new_password)
+            wait.until(EC.presence_of_element_located((By.NAME, 'RepeatedPassword'))).send_keys(new_password)
+
+            self.driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+
+            raise TemporaryPasswordError(f"Введён временный пароль\nНовый пароль: {new_password}")
 
     def site_login(self, func) -> str:
         self.driver.get(self.LOGIN_URL)
-
 
     def emaktab_connect(self, added: bool = False):
         @self.site_login
@@ -152,8 +199,7 @@ class EmaktabManager:
             from pprint import pprint
             pprint(driver.get_cookies())
 
-
     def test(self):
-        self.driver.get(self.LOGIN_URL)
-        time.sleep(3)
-        print(BeautifulSoup(self.driver.page_source, "html.parser").find(class_='login__body__hint login__body__hint_error-message login__body__hint_hidden').text)
+        @self.site_login
+        def _info():
+            print(self.driver.current_url)
