@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 
 class CookiesManager:
@@ -18,14 +19,26 @@ class CookiesManager:
                 json.dump(cookies, file, indent=4)
 
     def get_cookies(self, lang: str) -> list[dict]:
-        with open(f'./utils/cookies/{self.login}.json', mode='r') as file:
-            res = json.load(file)
+        path = f'./utils/cookies/{self.login}.json'
 
-        for cookie in res:
-            if cookie["name"] == "Dnevnik_localization":
-                cookie["value"] = lang
+        if os.path.isfile(path):
+            with open(path, mode='r') as file:
+                res: list[dict] = json.load(file)
 
-        return res
+            for cookie in res:
+                if cookie["name"] == "Dnevnik_localization":
+                    cookie["value"] = lang
+                else:
+                    res.append({
+                        "name": "Dnevnik_localization",
+                        "value": lang
+                        # "sameSite": "None"
+                    })
+
+            return res
+
+        else:
+            raise FileNotFoundError
 
 
 def start_logging(level: logging = logging.INFO):
