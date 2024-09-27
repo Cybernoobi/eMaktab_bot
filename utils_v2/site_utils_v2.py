@@ -8,10 +8,8 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 
 # misc
 import re
-import time
 import random
 from logging import *
-from bs4 import BeautifulSoup
 
 # local
 from utils.database.requests import get_emaktab
@@ -74,7 +72,7 @@ class EmaktabManager:
         self.driver.close()
         self.driver.quit()
 
-    async def first_login(self):
+    async def first_login(self, func=None):
         if self.user_id is None and self.login is None and self.password is None:
             raise UserDataIsNoneError("Нет данных для входа")
 
@@ -146,25 +144,29 @@ class EmaktabManager:
 
         elif wait.until(EC.url_to_be(self.BASE_URL + 'userfeed')):
             CookiesManager(self.login).save_cookie(self.driver.get_cookies())
+            if func:
+                await func()
             return True
 
         elif wait.until(EC.url_to_be(self.BASE_URL + 'billing')):
             raise NotSubscribedError("Отсутствует базовая подписка eMaktab")
 
-    async def site_login(self, func):
+    async def site_login(self, func=None):
         self.driver.get(self.BASE_URL + 'about')
 
-        for cookie in CookiesManager(self.login).get_cookies('ru-RU'):
+        try:
+            cookies = CookiesManager(self.login).get_cookies('ru-RU')
+        except FileNotFoundError:
+            await self.first_login()
+
+        for cookie in cookies:
             self.driver.add_cookie(cookie)
 
         self.driver.get(self.BASE_URL)
 
         try:
             if (await self.wait(0.5)).until(EC.url_to_be(self.BASE_URL + 'userfeed')):
-                print(func)
+                await func()
         except TimeoutException:
-            if await self.first_login():
-                await self.site_login(func)
-
-
-
+            if func:
+                await self.first_login(await func)
