@@ -14,3 +14,7 @@ class NotSubscribedError(Exception):
 
 class CaptchaError(Exception):
     pass
+
+
+class IncorrectUserCookieError(Exception):
+    pass

@@ -1,26 +1,27 @@
 # Selenium
-import time
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, ElementNotInteractableException
 
-# bs4 and re
-from bs4 import BeautifulSoup
+# misc
 import re
+import time
+import random
+from logging import *
+from bs4 import BeautifulSoup
 
 # local
 from utils.database.requests import get_emaktab
 from utils.other_utils import CookiesManager
 from utils.config import DEBUG
-from utils import (IncorrectLoginOrPasswordError, NotSubscribedError,
+from utils import (IncorrectLoginOrPasswordError, NotSubscribedError, IncorrectUserCookieError,
                    TemporaryPasswordError, UserDataIsNoneError, CaptchaError)
 
 
-def browser_connect():
+def browser_connect() -> webdriver.Chrome:
     from sys import platform
     import os
 
@@ -56,25 +57,6 @@ def browser_connect():
     return driver
 
 
-def site_log(func, login: str = None, password: str = None, driver: webdriver.Chrome = None) -> str:
-    driver.get('https://login.emaktab.uz/')
-
-    wait = WebDriverWait(driver, 3)
-
-    login_form = wait.until(EC.presence_of_element_located((By.NAME, 'login')))
-    password_form = wait.until(EC.presence_of_element_located((By.NAME, 'password')))
-
-    login_form.send_keys(login)
-    password_form.send_keys(password)
-
-    driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]')
-
-    if wait.until(EC.url_changes('https://emaktab.uz/userfeed')):
-        func()
-    else:
-        return 'error'
-
-
 class EmaktabManager:
     def __init__(self, user_id: int = None, login: str = None, password: str = None):
         self.user_id = user_id
@@ -85,16 +67,21 @@ class EmaktabManager:
         self.BASE_URL = 'https://emaktab.uz/'
         self.LOGIN_URL = 'https://login.emaktab.uz/'
 
-    def close_driver(self):
+    async def wait(self, seconds: [int, float] = 5) -> WebDriverWait:
+        return WebDriverWait(self.driver, seconds)
+
+    async def close_driver(self):
         self.driver.close()
         self.driver.quit()
 
-    def first_login(self):
+    async def first_login(self):
         if self.user_id is None and self.login is None and self.password is None:
             raise UserDataIsNoneError("Нет данных для входа")
 
+        info(f'start login {self.login}')
         self.driver.get(self.LOGIN_URL)
-        wait = WebDriverWait(self.driver, 25)
+
+        wait = await self.wait()
 
         login_form = wait.until(EC.presence_of_element_located((By.NAME, 'login')))
         password_form = wait.until(EC.presence_of_element_located((By.NAME, 'password')))
@@ -104,48 +91,51 @@ class EmaktabManager:
 
         self.driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
 
-        soup = BeautifulSoup(self.driver.page_source, 'html.parser').find(name='input',
-                                                                          class_='input_captcha-validation')
+        try:
+            captcha = (await self.wait(0.15)).until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'input[class="input_captcha-validation"]')))
 
-        if soup is not None:
-            import nopecha
-            text = nopecha.Recognition.solve(
-                type='textcaptcha',
-                image_urls=[self.driver.find_element(
-                    By.CSS_SELECTOR, 'img[alt="captcha image"]').get_attribute('src')],
-            )
+            if captcha is not None:
+                if captcha.is_displayed() is True:
+                    info('start auto-captcha')
+                    import nopecha
+                    text = nopecha.Recognition.solve(
+                        type='textcaptcha',
+                        image_urls=[self.driver.find_element(
+                            By.CSS_SELECTOR, 'img[alt="captcha image"]').get_attribute('src')],
+                    )
 
-            try:
-                self.driver.find_element(By.NAME, 'Captcha.Input').send_keys(text['data'][0])
-                self.driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
-            except KeyError:
-                raise CaptchaError(f"Каптча не было пройдена - error:{text['error']} text:{text['message']}")
+                    try:
+                        self.driver.find_element(By.NAME, 'Captcha.Input').send_keys(text['data'][0])
+                        self.driver.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+                        info('end auto-captcha')
+                    except KeyError:
+                        warning('auto-captcha failed')
+                        raise CaptchaError(f"Каптча не было пройдена - error:{text['error']} text:{text['message']}")
+                    except ElementNotInteractableException:
+                        pass
+
+        except TimeoutException:
+            pass
 
         try:
-            error = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.message')))
+            error = (await self.wait(0.3)).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '.message')))
 
             if error is not None:
                 if error.text.strip() in ['Parol yoki login notoʻgʻri koʻrsatilgan. Qaytadan urinib koʻring.',
                                           'Неправильно указан пароль или логин. Попробуйте еще раз.']:
+                    info('incorrect password')
                     raise IncorrectLoginOrPasswordError("Введен неправильный логин или пароль")
                 else:
-                    return error.text
+                    warning(error.text)
+                    raise Exception("eMaktabError")
 
-        except Exception as e:
-            return e
+        except TimeoutException:
+            pass
 
-        CookiesManager(self.login, self.driver.get_cookie('UZDnevnikAuth_a')).save_cookie()
-
-        if wait.until(EC.url_to_be(self.BASE_URL + 'userfeed')):
-            return True
-
-        elif wait.until(EC.url_to_be(self.BASE_URL + 'billing')):
-            raise NotSubscribedError("Отсутствует базовая подписка eMaktab")
-
-        elif re.search(r'password\?login=.*&token=.*', self.driver.current_url):
-            print('start')
-
-            new_password = 'uz_emaktab_robot'
+        if re.search(r'password\?login=.*&token=.*', self.driver.current_url) is not None:
+            new_password = f'{self.login}_{random.randint(1000, 9999)}'
 
             wait.until(EC.presence_of_element_located((By.NAME, 'Password'))).send_keys(new_password)
             wait.until(EC.presence_of_element_located((By.NAME, 'RepeatedPassword'))).send_keys(new_password)
@@ -154,52 +144,27 @@ class EmaktabManager:
 
             raise TemporaryPasswordError(f"Введён временный пароль\nНовый пароль: {new_password}")
 
-    def site_login(self, func) -> str:
-        self.driver.get(self.LOGIN_URL)
+        elif wait.until(EC.url_to_be(self.BASE_URL + 'userfeed')):
+            CookiesManager(self.login).save_cookie(self.driver.get_cookies())
+            return True
 
-    def emaktab_connect(self, added: bool = False):
-        @self.site_login
-        def _ret():
-            if added is True:
-                if get_emaktab(self.user_id, self.login, self.password, added=True) == 'success':
-                    return 'success'
-                else:
-                    return 'error'
-            else:
-                return 'error'
+        elif wait.until(EC.url_to_be(self.BASE_URL + 'billing')):
+            raise NotSubscribedError("Отсутствует базовая подписка eMaktab")
 
-    def emaktab_get_mark(self):
-        @self.site_login
-        def get_marks():
-            try:
-                html = BeautifulSoup(self.driver.page_source, "html.parser")
-                wrapper = html.find('div', class_='O4Y1L')
-                marks_objects = wrapper.find_all('div', class_='NmbeA')
+    async def site_login(self, func):
+        self.driver.get(self.BASE_URL + 'about')
 
-                output = ""
+        for cookie in CookiesManager(self.login).get_cookies('ru-RU'):
+            self.driver.add_cookie(cookie)
 
-                # Проходим по каждому блоку
-                for block in marks_objects:
-                    date = block.find(class_='H1xuJ').text.strip()
-                    output += f'\nОценки за {date}:\n'
-                    marks = block.find_all(class_='Wgxhi')
-                    for mark in marks:
-                        mark_subject = re.sub(r'[^\w\s\']', '', mark.find(class_='qZR20').text.strip())
-                        mark_value = re.sub(r'[^\w\s\']', '', mark.find(class_='h26OT').text.strip())
-                        mark_description = re.sub(r'[^\w\s\']', '', mark.find(class_='UDZhX').text.strip())
-                        output += f"  {mark_subject}: {mark_value} ({mark_description})\n"
+        self.driver.get(self.BASE_URL)
 
-                return output
-            except Exception as e:
-                return 'error', e, 'site_utils_v2'
+        try:
+            if (await self.wait(0.5)).until(EC.url_to_be(self.BASE_URL + 'userfeed')):
+                print(func)
+        except TimeoutException:
+            if await self.first_login():
+                await self.site_login(func)
 
-    def coks(self):
-        @self.site_login
-        def __coks(driver):
-            from pprint import pprint
-            pprint(driver.get_cookies())
 
-    def test(self):
-        @self.site_login
-        def _info():
-            print(self.driver.current_url)
+

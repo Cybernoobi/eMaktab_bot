@@ -25,7 +25,7 @@ class UserTelegram(CyberDataBase):
 class EmaktabUsers(CyberDataBase):
     __tablename__ = 'emaktab'
 
-    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('tg_users.user_id'), primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey(UserTelegram.user_id), primary_key=True)
     login: Mapped[str] = mapped_column(String(25))
     password: Mapped[str] = mapped_column(String(50))
 
@@ -34,8 +34,8 @@ class UserSettings(CyberDataBase):
     __tablename__ = 'settings'
 
     user_id: Mapped[int] = mapped_column(ForeignKey(UserTelegram.user_id), primary_key=True)
-    language: Mapped[str] = mapped_column(String(5), server_default='ru-RU')
-    account_type: Mapped[str] = mapped_column(String(25), server_default='student')  # student, parent, teacher
+    language: Mapped[str] = mapped_column(String(10))
+    account_type: Mapped[str] = mapped_column(String(10), server_default='student')  # student, parent, teacher
 
 
 async def async_main():
