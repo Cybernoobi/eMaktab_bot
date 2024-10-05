@@ -17,7 +17,7 @@ class UserTelegram(CyberDataBase):
     __tablename__ = 'tg_users'
 
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, unique=True)
-    username: Mapped[str] = mapped_column(String(35))
+    username: Mapped[str] = mapped_column(String(35), nullable=True)
     full_name: Mapped[str] = mapped_column(String(130))
     registration_date: Mapped[str] = mapped_column(String(130))
 
@@ -35,7 +35,7 @@ class UserSettings(CyberDataBase):
 
     user_id: Mapped[int] = mapped_column(ForeignKey(UserTelegram.user_id), primary_key=True)
     language: Mapped[str] = mapped_column(String(10))
-    account_type: Mapped[str] = mapped_column(String(10), server_default='student')  # student, parent, teacher
+    account_type: Mapped[str] = mapped_column(String(10), server_default='student', nullable=True)  # student, parent, teacher
 
 
 async def async_main():

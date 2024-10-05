@@ -169,4 +169,4 @@ class EmaktabManager:
                 await func()
         except TimeoutException:
             if func:
-                await self.first_login(await func)
+                await self.first_login(func)

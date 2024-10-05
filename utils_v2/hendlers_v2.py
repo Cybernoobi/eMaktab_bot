@@ -3,22 +3,27 @@ from aiogram import F, Router, types
 from aiogram.filters import CommandStart, Command
 
 # FSM
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
+from aiogram.enums.parse_mode import ParseMode
+from aiogram.fsm.state import StatesGroup, State
 
 # Local
-import utils.keyboard as kb
-from utils.database import requests as rq
+# import utils.keyboard as kb
 import utils.site_utils as su
+import utils_v2.keyboard_v2 as kb
+from utils.database import requests as rq
+from utils.other_utils import load_message
 
+# Misc
 from pprint import pprint
 
 router = Router()
 
 
 class LoginStates(StatesGroup):
-    waiting_for_login = State()
-    waiting_for_password = State()
+    set_lang = State()
+    wait_login = State()
+    wait_password = State()
 
 
 # Start command
@@ -28,11 +33,20 @@ async def start_command(message: types.Message):
     full_name = message.from_user.full_name
     username = message.from_user.username
 
-    await message.answer(
-        text=f'Добро пожаловать {full_name}.\nЭтот бот ещё в разработке, если есть вопросы пишите мне в лс @Cybernoobi')
+    if await rq.check_telegram_user(user_id):
+        # await rq.add_tg_user(user_id, full_name, username)
+        pass
+    else:
+        text = f'[🇷🇺] {load_message("set_lang", "ru-RU")}\n[🇺🇿] {load_message("set_lang", "uz-Latn-UZ")}'
+        await message.answer(text, reply_markup=await kb.set_lang(), parse_mode=ParseMode.HTML)
 
-    await rq.add_tg_user(user_id, full_name, username)
 
+@router.callback_query(F.data.startswith('set_lang'))
+async def set_lang(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    lang = callback.data.split('set_lang_')[-1]
+    print(lang)
+    # await rq.set_lang(user_id, lang)
 
 # Delete telegram user command
 # @router.message(Command('delete'))
@@ -44,18 +58,18 @@ async def start_command(message: types.Message):
 # Login eMaktab user
 @router.message(Command('login'))
 async def start_login(message: types.Message, state: FSMContext):
-    await state.set_state(LoginStates.waiting_for_login)
+    await state.set_state(LoginStates.wait_login)
     await message.reply("Введите свой логин")
 
 
-@router.message(LoginStates.waiting_for_login)
+@router.message(LoginStates.wait_login)
 async def process_login(message: types.Message, state: FSMContext):
     await state.update_data(login=message.text)
-    await state.set_state(LoginStates.waiting_for_password)
+    await state.set_state(LoginStates.wait_password)
     await message.reply("Теперь введите свой пароль")
 
 
-@router.message(LoginStates.waiting_for_password)
+@router.message(LoginStates.wait_password)
 async def process_password(message: types.Message, state: FSMContext):
     await state.update_data(password=message.text)
 

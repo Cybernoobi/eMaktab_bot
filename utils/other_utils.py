@@ -15,14 +15,14 @@ class CookiesManager:
                 cookies.append(key)
 
             # Сохраняем все куки в один файл
-            with open(f'./utils/cookies/{self.login}.json', mode='w') as file:
+            with open(f'./utils/cookies/{self.login}.json', mode='w', encoding='UTF-8') as file:
                 json.dump(cookies, file, indent=4)
 
     def get_cookies(self, lang: str) -> list[dict]:
         path = f'./utils/cookies/{self.login}.json'
 
         if os.path.isfile(path):
-            with open(path, mode='r') as file:
+            with open(path, mode='r', encoding='UTF-8') as file:
                 res: list[dict] = json.load(file)
 
             for cookie in res:
@@ -38,7 +38,26 @@ class CookiesManager:
             return res
 
         else:
-            raise FileNotFoundError
+            raise FileNotFoundError("Cookies file not found")
+
+    def delete_cookie(self):
+        try:
+            os.remove(f'./utils/cookies/{self.login}.json')
+        except FileNotFoundError:
+            raise FileNotFoundError("Cookies file not found")
+
+
+def load_message(msg: str, lang: str) -> str:
+    path = f'./utils/messages/{msg}.json'
+
+    if os.path.isfile(path):
+        with open(path, mode='r', encoding='UTF-8') as file:
+            res: dict = json.load(file)
+
+        return res[lang]
+
+    else:
+        raise FileNotFoundError("Message file not found")
 
 
 def start_logging(level: logging = logging.INFO):

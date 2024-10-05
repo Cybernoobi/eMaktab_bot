@@ -1,5 +1,5 @@
 from utils.database.models import async_session
-from utils.database.models import UserTelegram, EmaktabUsers
+from utils.database.models import UserTelegram, EmaktabUsers, UserSettings
 from sqlalchemy import select
 from datetime import datetime
 
@@ -60,6 +60,8 @@ async def delete_emaktab_login(user_id: int) -> None:
         if e_user:
             await session.delete(e_user)
             await session.commit()
+
+
 # async def get_categories():
 #     async with async_session() as session:
 #         return await session.scalars(select(Category))
@@ -73,3 +75,25 @@ async def delete_emaktab_login(user_id: int) -> None:
 # async def get_item(item_id):
 #     async with async_session() as session:
 #         return await session.scalar(select(Item).where(Item.id == item_id))
+
+### EMAKTAB V2 ###
+
+
+async def check_telegram_user(user_id: int) -> bool:
+    async with async_session() as session:
+        user = await session.scalar(select(UserTelegram).where(UserTelegram.user_id == user_id))
+        if user:
+            return True
+        else:
+            return False
+
+
+async def set_lang(user_id: int, lang: str, added: bool):
+    async with async_session() as session:
+        if added:
+            session.add(UserSettings(user_id, lang))
+            await session.commit()
+        else:
+            user = await session.scalar(select(UserSettings).where(UserSettings.user_id == user_id))
+            user.language = lang
+            await session.commit()
