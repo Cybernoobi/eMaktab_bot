@@ -9,7 +9,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 # Local
 # import utils.keyboard as kb
-import utils.site_utils as su
+import utils_v2.site_utils_v2 as su
 import utils_v2.keyboard_v2 as kb
 from utils.database import requests as rq
 from utils.other_utils import load_message
@@ -30,13 +30,14 @@ class LoginStates(StatesGroup):
 @router.message(CommandStart())
 async def start_command(message: types.Message):
     user_id = message.from_user.id
-    full_name = message.from_user.full_name
     username = message.from_user.username
+    full_name = message.from_user.full_name
 
-    if await rq.check_telegram_user(user_id):
-        # await rq.add_tg_user(user_id, full_name, username)
-        pass
+    if await rq.check_user(user_id, fileter='tg'):
+        if rq.check_user(user_id, fileter='em'):
+            await message.answer('Меню перезагружена', reply_markup=await kb.main(lang))
     else:
+        await rq.add_tg_user(user_id, full_name, username)
         text = f'[🇷🇺] {load_message("set_lang", "ru-RU")}\n[🇺🇿] {load_message("set_lang", "uz-Latn-UZ")}'
         await message.answer(text, reply_markup=await kb.set_lang(), parse_mode=ParseMode.HTML)
 
@@ -45,8 +46,35 @@ async def start_command(message: types.Message):
 async def set_lang(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     lang = callback.data.split('set_lang_')[-1]
-    print(lang)
-    # await rq.set_lang(user_id, lang)
+
+    await callback.message.delete()
+
+    if await rq.check_user(user_id, fileter='em'):
+        await rq.set_lang(user_id, lang, False)
+        await callback.message.answer(load_message("lang_switched", lang), parse_mode=ParseMode.HTML)
+
+    else:
+        await rq.set_lang(user_id, lang, True)
+        await callback.message.answer(load_message("welcome", lang),
+                                      reply_markup=await kb.privacy_policy(lang),
+                                      parse_mode=ParseMode.HTML)
+
+
+@router.callback_query(F.data.startswith('privacy_policy_'))
+async def privacy_policy(callback: types.CallbackQuery):
+    await callback.message.delete()
+
+    UserSettings = await rq.get_user_settings(callback.from_user.id)
+    lang = UserSettings.language
+
+    if callback.data == 'privacy_policy_success':
+        await rq.privacy_policy_true(UserSettings.user_id)
+        await callback.message.answer(load_message('login', lang), reply_markup=await kb.login(lang))
+
+    elif callback.data == 'privacy_policy_fail':
+        await callback.message.answer(load_message('privacy_policy_fail.json', lang), parse_mode=ParseMode.HTML)
+        await rq.CASCADE_USER(UserSettings.user_id)
+
 
 # Delete telegram user command
 # @router.message(Command('delete'))
@@ -58,15 +86,20 @@ async def set_lang(callback: types.CallbackQuery):
 # Login eMaktab user
 @router.message(Command('login'))
 async def start_login(message: types.Message, state: FSMContext):
+    UserSettings = await rq.get_user_settings(message.from_user.id)
+
+    await state.update_data(lang=UserSettings.language)
     await state.set_state(LoginStates.wait_login)
-    await message.reply("Введите свой логин")
+    await message.reply(load_message("get_login", UserSettings.language))
 
 
 @router.message(LoginStates.wait_login)
 async def process_login(message: types.Message, state: FSMContext):
+    lang = await state.get_data()['lang']
+
     await state.update_data(login=message.text)
     await state.set_state(LoginStates.wait_password)
-    await message.reply("Теперь введите свой пароль")
+    await message.reply(load_message("get_password", lang))
 
 
 @router.message(LoginStates.wait_password)
@@ -74,82 +107,33 @@ async def process_password(message: types.Message, state: FSMContext):
     await state.update_data(password=message.text)
 
     data = await state.get_data()
+
     user_id = message.from_user.id
     login = data['login']
     password = data['password']
+    lang = data['lang']
 
     if not await rq.get_emaktab(user_id, login, password):
-        result = await su.emaktab_connect(user_id, login, password)
+        EM = su.EmaktabManager(user_id, login, password)
+        await EM.init()
+        result = await EM.first_login()
 
-        await message.answer(text=result)
+        if result:
+            await message.answer(load_message("login_success", lang), parse_mode=ParseMode.HTML)
     else:
-        await message.answer(text='''
-[RU] Эта учетная запись уже связана если вам нужна помощь, напишите в службу технической поддержки (они есть в описании)
-[UZ] Ushbu hisob allaqachon bog'langan agar sizga yordam kerak bo'lsa, texnik yordamni yozing (ular tavsifda)''')
+        await message.answer(load_message("error_connected_account", lang))
 
     await state.clear()  # clearing the state
 
 
-# Logout eMaktab user
-@router.message(Command('logout'))
-async def logout_command(message: types.Message):
-    if await rq.get_emaktab(message.from_user.id, deleted=True) == 'success':
-        await message.answer(text='Вы удалены из базы')
-    else:
-        await message.answer(text='Произошла ошибка')
+@router.message(F.text == 'Недавние оценки')
+@router.message(Command('marks'))
+async def marks(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    User = rq.get_user_settings(user_id)
 
 
-# Get and print marks for eMaktab
-@router.message(Command('mark'))
-async def mark_command(message: types.Message):
-    sent_message = await message.answer(text='⚡️')
-    result = await rq.get_emaktab(message.from_user.id)
-
-    if result.login is not None:
-        login = result.login
-        password = result.password
-
-        item = await su.emaktab_get_mark(login, password)
-        if item == 'Incorrect password':
-            await sent_message.delete()
-            await message.answer(
-                text='Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
-        else:
-            await sent_message.delete()
-            await message.answer(text=item)
-            # pprint(item)
-    else:
-        await sent_message.delete()
-        await message.answer(text='Вы не зарегистрированы (/login)')
-
-
-# Get and print average score
-@router.message(Command('average_score'))
-async def average_score(message: types.Message):
-    await message.reply("Выберите четверть:", reply_markup=await kb.average_score_buttons())
-
-
-@router.callback_query()
-async def process_callback(callback_query: types.CallbackQuery):
-    sent_message = await callback_query.message.answer('⚡️')
-    result = await rq.get_emaktab(callback_query.from_user.id)
-
-    if result.login is not None:
-        login = result.login
-        password = result.password
-
-        item = await su.emaktab_get_average_score(login, password, int(callback_query.data))
-        if item == 'Incorrect password':
-            await sent_message.delete()
-            await callback_query.message.answer(
-                'Неправильный логин или пароль, для повторной регистрации введиьте /logout а потом /login')
-        elif item == 'Error 404':
-            await sent_message.delete()
-            await callback_query.message.answer('Сайт временно не отвечает')
-        else:
-            await sent_message.delete()
-            await callback_query.message.answer(text=item)
-            # pprint(item)
-    else:
-        await sent_message.delete()
-        await callback_query.message.answer(text='Вы не зарегистрированы (/login)')
+@router.message(Command('test'))
+async def test(message: types.Message):
+    await rq.privacy_policy(message.from_user.id)
+    # await message.answer('Тестовая кнопка', reply_markup=await kb.test())
