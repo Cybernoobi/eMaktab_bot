@@ -19,7 +19,7 @@ from utils import (IncorrectLoginOrPasswordError, NotSubscribedError, IncorrectU
                    TemporaryPasswordError, UserDataIsNoneError, CaptchaError)
 
 
-def browser_connect() -> webdriver.Chrome:
+async def browser_connect() -> webdriver.Chrome:
     from sys import platform
     import os
 
@@ -61,9 +61,12 @@ class EmaktabManager:
         self.login = login
         self.password = password
 
-        self.driver = browser_connect()
+        self.driver = None #browser_connect()
         self.BASE_URL = 'https://emaktab.uz/'
         self.LOGIN_URL = 'https://login.emaktab.uz/'
+
+    async def init(self):
+        self.driver = await browser_connect()
 
     async def wait(self, seconds: [int, float] = 5) -> WebDriverWait:
         return WebDriverWait(self.driver, seconds)
@@ -170,3 +173,8 @@ class EmaktabManager:
         except TimeoutException:
             if func:
                 await self.first_login(func)
+
+    @site_login
+    async def get_marks(self):
+        print(123)
+        # self.driver.get(self.BASE_URL)

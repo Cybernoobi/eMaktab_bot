@@ -47,7 +47,7 @@ class CookiesManager:
             raise FileNotFoundError("Cookies file not found")
 
 
-def load_message(msg: str, lang: str) -> str:
+def load_message(msg: str, lang: str):
     path = f'./utils/messages/{msg}.json'
 
     if os.path.isfile(path):
