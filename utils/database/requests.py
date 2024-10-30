@@ -79,21 +79,62 @@ async def delete_emaktab_login(user_id: int) -> None:
 ### EMAKTAB V2 ###
 
 
-async def check_telegram_user(user_id: int) -> bool:
+async def check_user(user_id: int, fileter: str) -> bool:
     async with async_session() as session:
-        user = await session.scalar(select(UserTelegram).where(UserTelegram.user_id == user_id))
-        if user:
-            return True
-        else:
-            return False
+        user = None
+        if fileter == 'tg':
+            user = await session.scalar(select(UserTelegram).where(UserTelegram.user_id == user_id))
+
+        elif fileter == 'em':
+            user = await session.scalar(select(EmaktabUsers).where(EmaktabUsers.user_id == user_id))
+
+        res: bool = True if user else False
+        return res
 
 
 async def set_lang(user_id: int, lang: str, added: bool):
     async with async_session() as session:
         if added:
-            session.add(UserSettings(user_id, lang))
+            session.add(UserSettings(user_id=user_id, language=lang))
             await session.commit()
         else:
             user = await session.scalar(select(UserSettings).where(UserSettings.user_id == user_id))
-            user.language = lang
+
+            if user is not None:
+                user.language = lang
+            else:
+                session.add(UserSettings(user_id=user_id, language=lang))
+
+            await session.commit()
+
+
+async def get_user_settings(user_id: int) -> UserSettings | None:
+    async with async_session() as session:
+        user = await session.scalar(select(UserSettings).where(UserSettings.user_id == user_id))
+        if user:
+            return user
+        else:
+            return None
+
+
+async def CASCADE_USER(user_id: int) -> None:
+    async with async_session() as session:
+        telegram_account: UserTelegram = await session.scalar(
+            select(UserTelegram).where(UserTelegram.user_id == user_id))
+        emaktab_account: EmaktabUsers = await session.scalar(
+            select(EmaktabUsers).where(EmaktabUsers.user_id == user_id))
+        settings: UserSettings = await session.scalar(select(UserSettings).where(UserSettings.user_id == user_id))
+
+        await session.delete(telegram_account) if telegram_account is not None else ''
+        await session.delete(emaktab_account) if emaktab_account is not None else ''
+        await session.delete(settings) if settings is not None else ''
+
+        await session.commit()
+
+
+async def privacy_policy_true(user_id: int) -> None:
+    async with async_session() as session:
+        user: UserSettings = await session.scalar(select(UserSettings).where(UserSettings.user_id == user_id))
+        if user:
+            user.privacy_policy = True
             await session.commit()

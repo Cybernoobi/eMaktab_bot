@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, String, ForeignKey
+from sqlalchemy import BigInteger, String, ForeignKey, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
@@ -36,6 +36,7 @@ class UserSettings(CyberDataBase):
     user_id: Mapped[int] = mapped_column(ForeignKey(UserTelegram.user_id), primary_key=True)
     language: Mapped[str] = mapped_column(String(10))
     account_type: Mapped[str] = mapped_column(String(10), server_default='student', nullable=True)  # student, parent, teacher
+    privacy_policy: Mapped[bool] = mapped_column(Boolean, server_default='0')
 
 
 async def async_main():
