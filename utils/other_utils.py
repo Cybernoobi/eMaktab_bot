@@ -1,6 +1,29 @@
-import json
-import logging
+import re
 import os
+import json
+from enum import Enum
+
+
+def validate_username(username):
+    pattern = r'^[A-Za-z][A-Za-z0-9._-]{4,18}[A-Za-z0-9_-]$'
+    # Проверяем, что строка соответствует всем критериям
+    if re.match(pattern, username):
+        return True
+    else:
+        return False
+
+
+def load_message(msg: str, lang: str):
+    path = f'./utils/messages/{msg}.json'
+
+    if os.path.isfile(path):
+        with open(path, mode='r', encoding='UTF-8') as file:
+            res: dict = json.load(file)
+
+        return res[lang]
+
+    else:
+        raise FileNotFoundError("Message file not found")
 
 
 class CookiesManager:
@@ -47,20 +70,12 @@ class CookiesManager:
             raise FileNotFoundError("Cookies file not found")
 
 
-def load_message(msg: str, lang: str):
-    path = f'./utils/messages/{msg}.json'
-
-    if os.path.isfile(path):
-        with open(path, mode='r', encoding='UTF-8') as file:
-            res: dict = json.load(file)
-
-        return res[lang]
-
-    else:
-        raise FileNotFoundError("Message file not found")
+class MyFilter(str, Enum):
+    TELEGRAM = 'tg'
+    EMAKTAB = 'em'
+    USER_SETTINGS = 'us'
 
 
-def start_logging(level: logging = logging.INFO):
-    logging.basicConfig(filename='logs/debug.log',
-                        level=level,
-                        format='%(asctime)s - %(message)s')
+class Langs(str, Enum):
+    RU = 'ru-RU'
+    UZ = 'uz-Latn-UZ'
