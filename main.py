@@ -5,7 +5,6 @@ from aiogram import Bot, Dispatcher
 
 # local
 from utils.database.models import async_main
-from utils.other_utils import start_logging
 from utils.database import requests as rq
 from utils.hendlers import router
 from utils.config import TG_API

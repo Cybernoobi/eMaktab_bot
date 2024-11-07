@@ -26,7 +26,12 @@ async def add_tg_user(user_id: int, username: str, full_name: str) -> None:
             await session.commit()
 
 
-async def get_emaktab(user_id: int, login: str = None, password: str = None, added=False, deleted=False):
+async def get_emaktab(user_id: int,
+                      login: str = None,
+                      password: str = None,
+                      added=False,
+                      deleted=False) -> EmaktabUsers | bool | str:
+
     async with async_session() as session:
         e_user = await session.scalar(select(EmaktabUsers).where(EmaktabUsers.user_id == user_id))
 
@@ -88,6 +93,9 @@ async def check_user(user_id: int, fileter: str) -> bool:
         elif fileter == 'em':
             user = await session.scalar(select(EmaktabUsers).where(EmaktabUsers.user_id == user_id))
 
+        elif fileter == 'us':
+            user = await session.scalar(select(UserSettings).where(UserSettings.user_id == user_id))
+
         res: bool = True if user else False
         return res
 
@@ -130,6 +138,12 @@ async def CASCADE_USER(user_id: int) -> None:
         await session.delete(settings) if settings is not None else ''
 
         await session.commit()
+
+
+async def check_privacy_policy(user_id: int) -> bool:
+    async with async_session() as session:
+        result: UserSettings = await session.scalar(select(UserSettings).where(UserSettings.user_id == user_id))
+        return result.privacy_policy
 
 
 async def privacy_policy_true(user_id: int) -> None:

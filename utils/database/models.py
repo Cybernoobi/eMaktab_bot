@@ -21,6 +21,9 @@ class UserTelegram(CyberDataBase):
     full_name: Mapped[str] = mapped_column(String(130))
     registration_date: Mapped[str] = mapped_column(String(130))
 
+    def __repr__(self):
+        return f'<UserTelegram {self.full_name} id={self.user_id}>'
+
 
 class EmaktabUsers(CyberDataBase):
     __tablename__ = 'emaktab'
@@ -28,6 +31,9 @@ class EmaktabUsers(CyberDataBase):
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey(UserTelegram.user_id), primary_key=True)
     login: Mapped[str] = mapped_column(String(25))
     password: Mapped[str] = mapped_column(String(50))
+
+    def __repr__(self) -> str:
+        return f'<EmaktabUser {self.login}>'
 
 
 class UserSettings(CyberDataBase):
