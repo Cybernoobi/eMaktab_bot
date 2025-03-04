@@ -1,13 +1,13 @@
-from aiogram import Bot, Dispatcher
-from aiogram.methods import DeleteWebhook
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.methods import DeleteWebhook
+from aiogram import Bot, Dispatcher
 
 
 # local
 from utils.database.models import async_main
 from utils.database import requests as rq
-from utils.config import TG_API
 from utils.hendlers import router
+from utils.config import TG_API
 
 
 async def on_startup(dispatcher: Dispatcher):
