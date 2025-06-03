@@ -1,4 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
+
+class ESchoolSchema(BaseModel):
+    id: str
+    regionName: str
 
 
 class EUserSchema(BaseModel):
@@ -11,7 +16,10 @@ class EUserSchema(BaseModel):
     group: int
     role: str
     commonRole: str
-    schools: list[dict[str, str]]
+    schools: list[ESchoolSchema]
     children: list
     isMethodist: bool
     experimentPRTopic: str
+
+    model_config = ConfigDict(strict=True)
+
