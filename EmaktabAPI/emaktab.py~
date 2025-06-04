@@ -34,7 +34,7 @@ class Client:
                 _body = await response.text()
                 _scripts = soup.find_all("script", src=False, type=False)
                 _dnevnik = soup.find("script", type="text/javascript")
-                print(_scripts[11].text)
+                print(_scripts[11])
                 info = ujson.loads(_body.split('<script type="text/javascript">')[1].split(';</script>')[0][13:].strip())
 
                 if not info["auth"]["isAuthenticated"]:
