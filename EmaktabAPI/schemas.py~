@@ -401,3 +401,4 @@ class EFullInfoSchema(CustomBaseModel):
     public__clubs__initial__state: PublicClubsInitialState = Field(..., alias='PUBLIC__CLUBS__INITIAL__STATE')
     api_urls: ApiUrls = Field(..., alias='apiUrls')
     complaint__initial__state: ComplaintInitialState = Field(..., alias='COMPLAINT__INITIAL__STATE')
+ 

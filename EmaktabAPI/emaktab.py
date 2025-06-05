@@ -3,7 +3,7 @@ from aiohttp import ClientSession, FormData
 from bs4 import BeautifulSoup
 
 from . import exceptions as exc
-from .schemas import EUserSchema
+from .schemas import EFullInfoSchema
 from .utils import check_url
 
 BASE_URL: str = "emaktab.uz"
@@ -18,7 +18,7 @@ class Client:
 
         self.login = login
         self.password = password
-        self.user: EUserSchema | None = None
+        self.full_info: EFullInfoSchema | None = None
 
     async def auth(self):
         auth_data = FormData()
@@ -39,8 +39,6 @@ class Client:
 
                 if not info["auth"]["isAuthenticated"]:
                     raise exc.InvalidLoginOrPassword("Invalid login or password")
-
-                self.user = EUserSchema.model_validate(info["user"])
 
                 self.auth_token = response.history[0].cookies.get("UZDnevnikAuth_a").value
                 self.auth_l = response.history[0].cookies.get("UZDnevnikAuth_l").value
