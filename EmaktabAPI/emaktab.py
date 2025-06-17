@@ -1,10 +1,10 @@
 import ujson
-from aiohttp import ClientSession, FormData
+from aiohttp import ClientSession, ClientResponse, FormData
 from bs4 import BeautifulSoup
 
 from . import exceptions as exc
 from .schemas import EFullInfoSchema
-from .utils import check_url
+from .utils import check_url, search_cookie, full_info_to_class
 
 BASE_URL: str = "emaktab.uz"
 
@@ -31,22 +31,27 @@ class Client:
                     raise exc.BadStatusCode(response.status)
 
                 soup = BeautifulSoup(await response.text(), "html.parser")
-                _body = await response.text()
-                _scripts = soup.find_all("script", src=False, type=False)
-                _dnevnik = soup.find("script", type="text/javascript")
-                print(_scripts[11].text)
-                info = ujson.loads(_body.split('<script type="text/javascript">')[1].split(';</script>')[0][13:].strip())
+                full_info = soup.find_all("script", src=False, type=False)[11].text.strip()
+                dnevnik = ujson.loads(soup.find("script", type="text/javascript").text.strip()[13:-1])
 
-                if not info["auth"]["isAuthenticated"]:
+                full_info_to_class(full_info)
+
+                if not dnevnik["auth"]["isAuthenticated"]:
                     raise exc.InvalidLoginOrPassword("Invalid login or password")
 
-                self.auth_token = response.history[0].cookies.get("UZDnevnikAuth_a").value
-                self.auth_l = response.history[0].cookies.get("UZDnevnikAuth_l").value
-
-    async def get_me(self):
-        pass
+                self.auth_token = search_cookie(response, "UZDnevnikAuth_a")
+                self.auth_l = search_cookie(response, "UZDnevnikAuth_l")
 
 
+
+class StudentClient(Client):
+    def __init__(self, login: str, password: str):
+        super().__init__(login, password)
+
+    async def get_marks(self):
+        async with self.session:
+            async with self.session.get(self.full_info.user__start__page__initial__state.urls.marks_url) as response:
+                return response
 
 
 class TeacherClient(Client):

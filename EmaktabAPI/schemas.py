@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
@@ -8,11 +9,21 @@ class CustomBaseModel(BaseModel):
 
 
 # EFullInfo schema
+class IdName(CustomBaseModel):
+    id: str
+    name: str
+
+
+class UserBase(CustomBaseModel):
+    sex: str
+    name: str
+
+
 class Children(CustomBaseModel):
     class Schedule(CustomBaseModel):
         class ChatStub(CustomBaseModel):
             jid: str
-            static_chat_url: any = Field(..., alias='staticChatUrl')
+            static_chat_url: Any = Field(..., alias='staticChatUrl')
 
         days: list
         chat_stub: ChatStub = Field(..., alias='chatStub')
@@ -28,18 +39,8 @@ class CurrentChild(Children):
     school_type: str = Field(..., alias='schoolType')
 
 
-class IdName(CustomBaseModel):
-    id: str
-    name: str
-
-
-class UserBase(CustomBaseModel):
-    sex: str
-    name: str
-
-
 class SurveyFormInitialState(CustomBaseModel):
-    survey_form: any = Field(..., alias='surveyForm')
+    survey_form: Any = Field(..., alias='surveyForm')
     survey_form_answer_url: str = Field(..., alias='surveyFormAnswerUrl')
     static_url: str = Field(..., alias='staticUrl')
 
@@ -108,7 +109,7 @@ class UserStartPageInitialState(CustomBaseModel):
             class_teacher_name: str = Field(..., alias='classTeacherName')
             class_teacher_chat_id: str = Field(..., alias='classTeacherChatId')
             have_active_subscription: bool = Field(..., alias='haveActiveSubscription')
-            class_teacher_peer_id: any = Field(..., alias='classTeacherPeerId')
+            class_teacher_peer_id: Any = Field(..., alias='classTeacherPeerId')
             is_msy_popup_available: bool = Field(..., alias='isMsyPopupAvailable')
             is_female: bool = Field(..., alias='isFemale')
             group_name: str = Field(..., alias='groupName')
@@ -137,16 +138,16 @@ class UserStartPageInitialState(CustomBaseModel):
             class Mark(CustomBaseModel):
                 class Subject(IdName):
                     knowledge_area: str = Field(..., alias='knowledgeArea')
-                    subject_mood: any = Field(..., alias='subjectMood')
+                    subject_mood: Any = Field(..., alias='subjectMood')
 
                 class MarkMarks(CustomBaseModel):
                     id: str
                     value: str
-                    max_value: any = Field(..., alias='maxValue')
+                    max_value: Any = Field(..., alias='maxValue')
                     mood: str
 
                 date: str
-                lesson_date: any = Field(..., alias='lessonDate')
+                lesson_date: Any = Field(..., alias='lessonDate')
                 subject: Subject
                 mark_type: str = Field(..., alias='markType')
                 mark_type_text: str = Field(..., alias='markTypeText')
@@ -157,7 +158,7 @@ class UserStartPageInitialState(CustomBaseModel):
                 number: int
                 period_id: str = Field(..., alias='periodId')
                 section_id: str = Field(..., alias='sectionId')
-                analytics_period: any = Field(..., alias='analyticsPeriod')
+                analytics_period: Any = Field(..., alias='analyticsPeriod')
 
             marks: list[Mark]
             marks_indicators: list = Field(..., alias='analyticsPeriod')
@@ -178,7 +179,7 @@ class UserStartPageInitialState(CustomBaseModel):
 
     class UserGifts(CustomBaseModel):
         children: list
-        gift_types: any = Field(..., alias='giftTypes')
+        gift_types: Any = Field(..., alias='giftTypes')
 
     class Banners(CustomBaseModel):
         right300x600: str = Field(..., alias='right300X600')
@@ -217,7 +218,7 @@ class UserStartPageInitialState(CustomBaseModel):
         post_onelove: bool = Field(..., alias='postOnelove')
         post_reactions: bool = Field(..., alias='postReactions')
         post_reactions_click: bool = Field(..., alias='postReactionsClick')
-        post_onelike = Field(..., alias='postOnelike')
+        post_onelike: bool = Field(..., alias='postOnelike')
         public_auto_subscribe: bool = Field(..., alias='publicAutoSubscribe')
         post_survey: bool = Field(..., alias='postSurvey')
         share: bool
@@ -228,7 +229,7 @@ class UserStartPageInitialState(CustomBaseModel):
 
     class VocamateChatbotTutor(CustomBaseModel):
         is_available: bool = Field(..., alias='isAvailable')
-        chat_id: any = Field(..., alias='chatId')
+        chat_id: Any = Field(..., alias='chatId')
         url: str
 
     class BubzChatbotTutor(CustomBaseModel):
@@ -237,7 +238,7 @@ class UserStartPageInitialState(CustomBaseModel):
         localization: str
         widget_show_delay_seconds: int = Field(..., alias='widgetShowDelaySeconds')
         is_available: bool = Field(..., alias='isAvailable')
-        chat_id: any = Field(..., alias='chatId')
+        chat_id: Any = Field(..., alias='chatId')
         url: str
 
     user_schedule: UserSchedule = Field(..., alias='userSchedule')
@@ -254,7 +255,7 @@ class UserStartPageInitialState(CustomBaseModel):
     links: Links = Field(..., alias='links')
     environment_prefix: str = Field(..., alias='environmentPrefix')
     experiments: Experiments
-    outside_push_banner: any = Field(..., alias='outsidePushBanner')
+    outside_push_banner: Any = Field(..., alias='outsidePushBanner')
     vocamate_chatbot_tutor: VocamateChatbotTutor = Field(..., alias='vocamateChatbotTutor')
     bubz_chatbot_tutor: BubzChatbotTutor = Field(..., alias='bubzChatbotTutor')
 
@@ -265,12 +266,12 @@ class TalkInitialState(CustomBaseModel):
         irrelevant: bool
         created: bool
         is_system: bool = Field(..., alias='isSystem')
-        school_name: any = Field(..., alias='schoolName')
-        class_teacher: any = Field(..., alias='classTeacher')
+        school_name: Any = Field(..., alias='schoolName')
+        class_teacher: Any = Field(..., alias='classTeacher')
         chat_type: str = Field(..., alias='chatType')
         school_id: str = Field(..., alias='schoolId')
         is_archive_contact: bool = Field(..., alias='isArchiveContact')
-        affiliations: any
+        affiliations: Any
         is_poo_school: bool = Field(..., alias='isPooSchool')
         is_odo_school: bool = Field(..., alias='isOdoSchool')
         is_gpt_chat: bool = Field(..., alias='isGptChat')
@@ -282,10 +283,10 @@ class TalkInitialState(CustomBaseModel):
         unknown: bool
         roles: list[str]
         school_ids: list[str] = Field(..., alias='schoolIds')
-        groups: any
-        teacher_groups: any
+        groups: Any
+        teacher_groups: Any
         class_teacher_groups: list[str] = Field(..., alias='classTeacherGroups')
-        subjects: any
+        subjects: Any
         profile_url: str = Field(..., alias='profileUrl')
         is_dnevnik_expert: bool = Field(..., alias='isDnevnikExpert')
 
@@ -301,7 +302,7 @@ class TalkInitialState(CustomBaseModel):
         feedback_url: str = Field(..., alias='feedbackUrl')
         async_task_api_url: str = Field(..., alias='asyncTaskApiUrl')
         custom_chats_avatars_url: str = Field(..., alias='customChatsAvatarsUrl')
-        message_archive: any = Field(..., alias='messageArchive')
+        message_archive: Any = Field(..., alias='messageArchive')
         polls_api_url: str = Field(..., alias='pollsApiUrl')
         pools_url: str = Field(..., alias='poolsUrl')
         chat_url: str = Field(..., alias='chatUrl')
@@ -313,7 +314,7 @@ class TalkInitialState(CustomBaseModel):
     class Metrika(CustomBaseModel):
         user_id: str = Field(..., alias='userId')
         role: str
-        source: any
+        source: Any
         page: str
 
     class UserExperiments(CustomBaseModel):
@@ -346,7 +347,7 @@ class TalkInitialState(CustomBaseModel):
     message_statuses_enabled: bool = Field(..., alias='messageStatusesEnabled')
     show_app_links: bool = Field(..., alias='showAppLinks')
     zero_height: bool = Field(..., alias='zeroHeight')
-    notice: any
+    notice: Any
     schoolsInfo: list[SchoolInfo]
 
 
