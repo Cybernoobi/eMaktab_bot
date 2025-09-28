@@ -184,5 +184,6 @@ fabric.properties
 .idea
 
 config.toml
-test.py
 example.html
+/test
+*.lock
