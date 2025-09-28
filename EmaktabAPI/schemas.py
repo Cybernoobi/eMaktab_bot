@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Any, List, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 
 class ESchoolSchema(BaseModel):
@@ -10,7 +10,7 @@ class ESchoolSchema(BaseModel):
 
 
 class EChildrenSchema(BaseModel):
-    age: int
+    age: PositiveInt
     sex: Literal["Male", "Female"]
 
 
@@ -20,8 +20,8 @@ class EUserSchema(EChildrenSchema):
     id: str
     email_hash: str = Field(..., alias='emailHash')
     group: int
-    role: str
-    common_role: Literal["student", "staff"] = Field(..., alias='commonRole')
+    role: Literal["EduStudent", "EduParent"] | str
+    common_role: Literal["student", "staff", "parent"] | str = Field(..., alias='commonRole')
     schools: list[ESchoolSchema]
     children: list[EChildrenSchema] | None
     is_methodist: bool = Field(..., alias='isMethodist')
@@ -76,8 +76,8 @@ class _BasicInfoChild(BaseModel):
                         text: str
                         is_completed: bool = Field(..., alias='isCompleted')
                         work_is_attach_required: bool = Field(..., alias='workIsAttachRequired')
-                        attachments: List
-                        user_attachments: List = Field(..., alias='userAttachments')
+                        attachments: list
+                        user_attachments: list = Field(..., alias='userAttachments')
                         lesson_id: Any = Field(..., alias='lessonId')
 
                     class SmartHomework(Homework):
@@ -90,7 +90,7 @@ class _BasicInfoChild(BaseModel):
                             mood: str
 
                         work_id: str = Field(..., alias='workId')
-                        marks: List[Mark]
+                        marks: list[Mark]
 
                     id: str
                     number: int
@@ -103,11 +103,11 @@ class _BasicInfoChild(BaseModel):
                     meeting: Any
                     smart_work_info: Any = Field(..., alias='smartWorkInfo')
                     subject: Subject
-                    important_works: List[str] = Field(..., alias='importantWorks')
+                    important_works: list[str] = Field(..., alias='importantWorks')
                     homework: Homework
-                    smart_homeworks: List[SmartHomework] = Field(..., alias='smartHomeworks')
+                    smart_homeworks: list[SmartHomework] = Field(..., alias='smartHomeworks')
                     has_attachment: bool = Field(..., alias='hasAttachment')
-                    work_marks: List[WorkMark] = Field(..., alias='workMarks')
+                    work_marks: list[WorkMark] = Field(..., alias='workMarks')
                     is_empty: bool = Field(..., alias='isEmpty')
                     comment: Any
 
@@ -117,14 +117,14 @@ class _BasicInfoChild(BaseModel):
                 day_homeworks_progress: DayHomeworksProgress = Field(
                     ..., alias='dayHomeworksProgress'
                 )
-                lessons: List[Lesson]
-                sor_sochs: List = Field(..., alias='sorSochs')
+                lessons: list[Lesson]
+                sor_sochs: list = Field(..., alias='sorSochs')
 
             class ChatStub(BaseModel):
                 jid: str
                 static_chat_url: Any = Field(..., alias='staticChatUrl')
 
-            days: List[Day]
+            days: list[Day]
             chat_stub: ChatStub = Field(..., alias='chatStub')
 
         schedule: Schedule
@@ -133,7 +133,7 @@ class _BasicInfoChild(BaseModel):
         has_schedule: bool = Field(..., alias='hasSchedule')
         school_type: str = Field(..., alias='schoolType')
 
-    children: List[Child]
+    children: list[Child]
     current_child: CurrentChild = Field(..., alias='currentChild')
 
 
@@ -167,7 +167,7 @@ class UserStartPageInitialState(BaseModel):
                 is_oo: bool = Field(..., alias='isOo')
                 is_npo_spo: bool = Field(..., alias='isNpoSpo')
                 avatar_url: str = Field(..., alias='avatarUrl')
-                region_ids: List[int] = Field(..., alias='regionIds')
+                region_ids: list[int] = Field(..., alias='regionIds')
 
             class Group(_BasicSchoolOrGroupInfo):
                 is_criteria_journal_type: bool = Field(..., alias='isCriteriaJournalType')
@@ -186,7 +186,7 @@ class UserStartPageInitialState(BaseModel):
                     study_year: int = Field(..., alias='studyYear')
                     is_current: bool = Field(..., alias='isCurrent')
 
-                periods: List[Period]
+                periods: list[Period]
 
             user_age: int = Field(..., alias='userAge')
 
@@ -217,7 +217,7 @@ class UserStartPageInitialState(BaseModel):
             is_student: bool = Field(..., alias='isStudent')
             current_culture_code: str = Field(..., alias='currentCultureCode')
 
-        context_persons: List[ContextPerson] = Field(..., alias='contextPersons')
+        context_persons: list[ContextPerson] = Field(..., alias='contextPersons')
         current_context_person: CurrentContextPerson = Field(
             ..., alias='currentContextPerson'
         )
@@ -240,7 +240,7 @@ class UserStartPageInitialState(BaseModel):
         smart_sor_soch: str = Field(..., alias='smartSorSoch')
 
     class FeedEventsWidget(BaseModel):
-        children: List
+        children: list
 
     class Analytics(_IdsAndUserInfo):
         is_criteria_journal_type: bool = Field(..., alias='isCriteriaJournalType')
@@ -313,7 +313,7 @@ class UserStartPageInitialState(BaseModel):
     links: Links
     environment_prefix: str = Field(..., alias='environmentPrefix')
     experiments: Experiments
-    partners_recommendation_experiments: List = Field(
+    partners_recommendation_experiments: list = Field(
         ..., alias='partnersRecommendationExperiments'
     )
     outside_push_banner: Any = Field(..., alias='outsidePushBanner')
@@ -340,7 +340,7 @@ class MomSaidYesInitialState(BaseModel):
         label: str
         message_label: str = Field(..., alias='messageLabel')
 
-    absence_reasons: List[AbsenceReason] = Field(..., alias='absenceReasons')
+    absence_reasons: list[AbsenceReason] = Field(..., alias='absenceReasons')
     current_study_year_finish_date: str = Field(..., alias='currentStudyYearFinishDate')
     is_msy_popup_enabled: bool = Field(..., alias='isMsyPopupEnabled')
 
