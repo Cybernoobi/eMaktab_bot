@@ -95,8 +95,8 @@ class _BasicInfoChild(BaseModel):
                     id: str
                     number: int
                     place: Any
-                    start_time: str = Field(..., alias='startTime')
-                    end_time: str = Field(..., alias='endTime')
+                    start_time: datetime = Field(..., alias='startTime')
+                    end_time: datetime = Field(..., alias='endTime')
                     hours: Hours
                     is_canceled: bool = Field(..., alias='isCanceled')
                     theme: str
@@ -111,7 +111,7 @@ class _BasicInfoChild(BaseModel):
                     is_empty: bool = Field(..., alias='isEmpty')
                     comment: Any
 
-                date: str
+                date: datetime
                 utc_offset: int = Field(..., alias='utcOffset')
                 has_important_work: bool = Field(..., alias='hasImportantWork')
                 day_homeworks_progress: DayHomeworksProgress = Field(
@@ -350,7 +350,3 @@ class EUserAllInitialStates(BaseModel):
     mom_said_yes: MomSaidYesInitialState = Field(..., alias='momSaidYesInitialState')
     survey_form: SurveyFormInitialState = Field(..., alias='surveyFormInitialState')
     user_start_page: UserStartPageInitialState = Field(..., alias='userStartPage')
-
-
-class Test(BaseModel):
-    date: datetime
