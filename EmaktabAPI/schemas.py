@@ -47,94 +47,9 @@ class _BasicSchoolOrGroupInfo(BaseModel):
     page_url: str = Field(..., alias='pageUrl')
 
 
-class _BasicInfoChild(BaseModel):
-    class Child(_IdsInfo):
-        class Schedule(BaseModel):
-            class Day(BaseModel):
-                class DayHomeworksProgress(BaseModel):
-                    total_lessons_with_homeworks_count: int = Field(
-                        ..., alias='totalLessonsWithHomeworksCount'
-                    )
-                    completed_lessons_with_homeworks_count: int = Field(
-                        ..., alias='completedLessonsWithHomeworksCount'
-                    )
-
-                class Lesson(BaseModel):
-                    class Hours(BaseModel):
-                        start_hour: str = Field(..., alias='startHour')
-                        start_minute: str = Field(..., alias='startMinute')
-                        end_hour: str = Field(..., alias='endHour')
-                        end_minute: str = Field(..., alias='endMinute')
-
-                    class Subject(BaseModel):
-                        id: str
-                        name: str
-                        knowledge_area: str = Field(..., alias='knowledgeArea')
-
-                    class Homework(BaseModel):
-                        id: Any
-                        text: str
-                        is_completed: bool = Field(..., alias='isCompleted')
-                        work_is_attach_required: bool = Field(..., alias='workIsAttachRequired')
-                        attachments: list
-                        user_attachments: list = Field(..., alias='userAttachments')
-                        lesson_id: Any = Field(..., alias='lessonId')
-
-                    class SmartHomework(Homework):
-                        pass
-
-                    class WorkMark(BaseModel):
-                        class Mark(BaseModel):
-                            id: str
-                            value: str
-                            mood: str
-
-                        work_id: str = Field(..., alias='workId')
-                        marks: list[Mark]
-
-                    id: str
-                    number: int
-                    place: Any
-                    start_time: datetime = Field(..., alias='startTime')
-                    end_time: datetime = Field(..., alias='endTime')
-                    hours: Hours
-                    is_canceled: bool = Field(..., alias='isCanceled')
-                    theme: str
-                    meeting: Any
-                    smart_work_info: Any = Field(..., alias='smartWorkInfo')
-                    subject: Subject
-                    important_works: list[str] = Field(..., alias='importantWorks')
-                    homework: Homework
-                    smart_homeworks: list[SmartHomework] = Field(..., alias='smartHomeworks')
-                    has_attachment: bool = Field(..., alias='hasAttachment')
-                    work_marks: list[WorkMark] = Field(..., alias='workMarks')
-                    is_empty: bool = Field(..., alias='isEmpty')
-                    comment: Any
-
-                date: datetime
-                utc_offset: int = Field(..., alias='utcOffset')
-                has_important_work: bool = Field(..., alias='hasImportantWork')
-                day_homeworks_progress: DayHomeworksProgress = Field(
-                    ..., alias='dayHomeworksProgress'
-                )
-                lessons: list[Lesson]
-                sor_sochs: list = Field(..., alias='sorSochs')
-
-            class ChatStub(BaseModel):
-                jid: str
-                static_chat_url: Any = Field(..., alias='staticChatUrl')
-
-            days: list[Day]
-            chat_stub: ChatStub = Field(..., alias='chatStub')
-
-        schedule: Schedule
-
-    class CurrentChild(_IdsInfo):
-        has_schedule: bool = Field(..., alias='hasSchedule')
-        school_type: str = Field(..., alias='schoolType')
-
-    children: list[Child]
-    current_child: CurrentChild = Field(..., alias='currentChild')
+class _BasicCurrentChildInfo(_IdsInfo):
+    has_schedule: bool = Field(..., alias='hasSchedule')
+    school_type: str = Field(..., alias='schoolType')
 
 
 class _UserBasicInfo(BaseModel):
@@ -151,14 +66,126 @@ class _IdAndType(BaseModel):
     type: str
 
 
+class _BasicMarkInfo(BaseModel):
+    id: str
+    value: str
+    mood: str
+
+
+class _BasicWorkMarkInfo(BaseModel):
+    work_id: str = Field(..., alias='workId')
+    marks: list[_BasicMarkInfo]
+
+
+class _BasicSubjectInfo(BaseModel):
+    id: str
+    name: str
+    knowledge_area: str = Field(..., alias='knowledgeArea')
+
+
 # __USER__START__PAGE__INITIAL__STATE__
 class UserStartPageInitialState(BaseModel):
-    class UserSchedule(_BasicInfoChild):
-        api_url: str = Field(..., alias='apiUrl')
-        current_date: str = Field(..., alias='currentDate')
+    class UserSchedule(BaseModel):
+        class Child(_IdsInfo):
+            class Schedule(BaseModel):
+                class Day(BaseModel):
+                    class DayHomeworksProgress(BaseModel):
+                        total_lessons_with_homeworks_count: int = Field(
+                            ..., alias='totalLessonsWithHomeworksCount'
+                        )
+                        completed_lessons_with_homeworks_count: int = Field(
+                            ..., alias='completedLessonsWithHomeworksCount'
+                        )
 
-    class UserMarks(_BasicInfoChild):
-        pass
+                    class Lesson(BaseModel):
+                        class Hours(BaseModel):
+                            start_hour: str = Field(..., alias='startHour')
+                            start_minute: str = Field(..., alias='startMinute')
+                            end_hour: str = Field(..., alias='endHour')
+                            end_minute: str = Field(..., alias='endMinute')
+
+                        class Homework(BaseModel):
+                            id: Any
+                            text: str
+                            is_completed: bool = Field(..., alias='isCompleted')
+                            work_is_attach_required: bool = Field(..., alias='workIsAttachRequired')
+                            attachments: list
+                            user_attachments: list = Field(..., alias='userAttachments')
+                            lesson_id: Any = Field(..., alias='lessonId')
+
+                        class SmartHomework(Homework):
+                            pass
+
+                        id: str
+                        number: int
+                        place: Any
+                        start_time: datetime = Field(..., alias='startTime')
+                        end_time: datetime = Field(..., alias='endTime')
+                        hours: Hours
+                        is_canceled: bool = Field(..., alias='isCanceled')
+                        theme: str
+                        meeting: Any
+                        smart_work_info: Any = Field(..., alias='smartWorkInfo')
+                        subject: _BasicSubjectInfo
+                        important_works: list[str] = Field(..., alias='importantWorks')
+                        homework: Homework
+                        smart_homeworks: list[SmartHomework] = Field(..., alias='smartHomeworks')
+                        has_attachment: bool = Field(..., alias='hasAttachment')
+                        work_marks: list[_BasicWorkMarkInfo] = Field(..., alias='workMarks')
+                        is_empty: bool = Field(..., alias='isEmpty')
+                        comment: Any
+
+                    date: datetime
+                    utc_offset: int = Field(..., alias='utcOffset')
+                    has_important_work: bool = Field(..., alias='hasImportantWork')
+                    day_homeworks_progress: DayHomeworksProgress = Field(
+                        ..., alias='dayHomeworksProgress'
+                    )
+                    lessons: list[Lesson]
+                    sor_sochs: list = Field(..., alias='sorSochs')
+
+                class ChatStub(BaseModel):
+                    jid: str
+                    static_chat_url: Any = Field(..., alias='staticChatUrl')
+
+                days: list[Day]
+                chat_stub: ChatStub = Field(..., alias='chatStub')
+
+            schedule: Schedule
+
+        api_url: str = Field(..., alias='apiUrl')
+        children: list[Child]
+        current_child: _BasicCurrentChildInfo = Field(..., alias='currentChild')
+        current_date: datetime = Field(..., alias='currentDate')
+
+    class UserMarks(BaseModel):
+        class Child(_IdsInfo):
+            class Marks(_BasicWorkMarkInfo):
+                class Subject(_BasicSubjectInfo):
+                    subject_mood: Any = Field(..., alias='subjectMood')
+
+                class Mark(_BasicMarkInfo):
+                    max_value: Any = Field(..., alias='maxValue')
+
+                date: datetime
+                lesson_date: datetime = Field(..., alias='lessonDate')
+                subject: Subject
+                mark_type: str = Field(..., alias='markType')
+                mark_type_text: str = Field(..., alias='markTypeText')
+                short_mark_type_text: str = Field(..., alias='shortMarkTypeText')
+                is_final: bool = Field(..., alias='isFinal')
+                marks: list[Mark]
+                number: int
+                period_id: str = Field(..., alias='periodId')
+                section_id: str = Field(..., alias='sectionId')
+                analytics_period: Any = Field(..., alias='analyticsPeriod')
+
+            ratings_marks_info: Any = Field(..., alias='ratingsMarksInfo')
+            marks: list
+            marks_indicators: list = Field(..., alias='marksIndicators')
+
+        children: list[Child]
+        current_child: _BasicCurrentChildInfo = Field(..., alias='currentChild')
 
     class UserContext(BaseModel):
         class ContextPerson(_IdsInfo, _UserBasicInfo):
@@ -345,8 +372,161 @@ class MomSaidYesInitialState(BaseModel):
     is_msy_popup_enabled: bool = Field(..., alias='isMsyPopupEnabled')
 
 
+# __TALK__INITIAL__STATE__
+class TalkInitialState(BaseModel):
+    class User(BaseModel):
+        avatar_large: str = Field(..., alias='avatarLarge')
+        irrelevant: bool
+        created: bool
+        sex: str
+        is_system: bool = Field(..., alias='isSystem')
+        school_name: Any = Field(..., alias='schoolName')
+        class_teacher: Any = Field(..., alias='classTeacher')
+        chat_type: str = Field(..., alias='chatType')
+        school_id: str = Field(..., alias='schoolId')
+        is_archive_contact: bool = Field(..., alias='isArchiveContact')
+        affiliations: Any
+        is_poo_school: bool = Field(..., alias='isPooSchool')
+        is_odo_school: bool = Field(..., alias='isOdoSchool')
+        jid: str
+        type: str
+        name: str
+        short_name: str = Field(..., alias='shortName')
+        avatar: str
+        avatar_background: Any = Field(..., alias='avatarBackground')
+        unknown: bool
+        roles: list[str]
+        school_ids: list[str] = Field(..., alias='schoolIds')
+        groups: dict[str, Any]
+        teacher_groups: dict[str, Any] = Field(..., alias='teacherGroups')
+        class_teacher_groups: list = Field(..., alias='classTeacherGroups')
+        subjects: Any
+        profile_url: str = Field(..., alias='profileUrl')
+        is_dnevnik_expert: bool = Field(..., alias='isDnevnikExpert')
+
+    class Urls(BaseModel):
+        messenger_url: str = Field(..., alias='messengerUrl')
+        favicon_url: str = Field(..., alias='faviconUrl')
+        messenger_favicon_url: str = Field(..., alias='messengerFaviconUrl')
+        return_url: str = Field(..., alias='returnUrl')
+        logo_url: str = Field(..., alias='logoUrl')
+        terms_url: str = Field(..., alias='termsUrl')
+        host: str
+        multi_user_chat_host: str = Field(..., alias='multiUserChatHost')
+        feedback_url: str = Field(..., alias='feedbackUrl')
+        async_task_api_url: str = Field(..., alias='asyncTaskApiUrl')
+        custom_chats_avatars_url: str = Field(..., alias='customChatsAvatarsUrl')
+        messenger_archive: Any = Field(..., alias='messengerArchive')
+        polls_api_url: str = Field(..., alias='pollsApiUrl')
+        polls_url: str = Field(..., alias='pollsUrl')
+        chat_url: str = Field(..., alias='chatUrl')
+        api_url: str = Field(..., alias='apiUrl')
+        mongoose_bosh_host: str = Field(..., alias='mongooseBoshHost')
+        mongoose_ws_host: str = Field(..., alias='mongooseWSHost')
+        use_bosh: bool = Field(..., alias='useBosh')
+
+    class Metrika(BaseModel):
+        user_id: str = Field(..., alias='userId')
+        role: str
+        source: Any
+        page: str
+
+    class UserExperiments(BaseModel):
+        survey: bool
+        online_status: bool = Field(..., alias='onlineStatus')
+        hide_ads: bool = Field(..., alias='hideAds')
+        messenger_adaptive_journal: bool = Field(..., alias='messengerAdaptiveJournal')
+        messenger_mongoose_archive: bool = Field(..., alias='messengerMongooseArchive')
+        messenger_mongoose_notice: bool = Field(..., alias='messengerMongooseNotice')
+        schools_in_custom_chats_experiment: list = Field(
+            ..., alias='schoolsInCustomChatsExperiment'
+        )
+
+    class SchoolsInfoItem(BaseModel):
+        id: str
+        name: str
+        is_odo_school: bool = Field(..., alias='isOdoSchool')
+        is_poo_school: bool = Field(..., alias='isPooSchool')
+
+    user: User
+    urls: Urls
+    environment_prefix: str = Field(..., alias='environmentPrefix')
+    metrika: Metrika
+    attachment_hosts: list[str] = Field(..., alias='attachmentHosts')
+    inactive_tab_connection_timeout_seconds: int = Field(
+        ..., alias='inactiveTabConnectionTimeoutSeconds'
+    )
+    inbox_polling_interval_seconds: int = Field(
+        ..., alias='inboxPollingIntervalSeconds'
+    )
+    keep_alive_interval: int = Field(..., alias='keepAliveInterval')
+    credentials_poll_interval: int = Field(..., alias='credentialsPollInterval')
+    user_experiments: UserExperiments = Field(..., alias='userExperiments')
+    unread_count: int = Field(..., alias='unreadCount')
+    unread_roles: list = Field(..., alias='unreadRoles')
+    roster_versioning_enabled: bool = Field(..., alias='rosterVersioningEnabled')
+    roster_cache_ttl: int = Field(..., alias='rosterCacheTTL')
+    message_statuses_enabled: bool = Field(..., alias='messageStatusesEnabled')
+    show_app_links: bool = Field(..., alias='showAppLinks')
+    zero_height: bool = Field(..., alias='zeroHeight')
+    notice: Any
+    schools_info: list[SchoolsInfoItem] = Field(..., alias='schoolsInfo')
+
+
+# __MEDIA_WIDGET__INITIAL__STATE__
+class MediaWidgetInitialState(BaseModel):
+    api_url: str = Field(..., alias='apiUrl')
+    max_upload_file_size: str = Field(..., alias='maxUploadFileSize')
+    max_upload_file_size_message: str = Field(..., alias='maxUploadFileSizeMessage')
+    grid_preview_experiment: bool = Field(..., alias='gridPreviewExperiment')
+
+
+# __PUBLIC__CLUBS__INITIAL__STATE__
+class PublicClubsInitialState(BaseModel):
+    class Metrika(BaseModel):
+        page: str
+
+    club_id: Any = Field(..., alias='clubId')
+    api_url: str = Field(..., alias='apiUrl')
+    environment_prefix: str = Field(..., alias='environmentPrefix')
+    default_background_image_url: str = Field(..., alias='defaultBackgroundImageUrl')
+    metrika: Metrika
+
+
+# apiUrls
+class ApiUrls(BaseModel):
+    feed: str
+    posts: str
+    user_link: str = Field(..., alias='userLink')
+    analytics: str
+    publicclub: str
+    user_key_value_storage: str = Field(..., alias='userKeyValueStorage')
+    polls_api_url: str = Field(..., alias='pollsApiUrl')
+    ratings: str
+    vuz: str
+    domain: str
+
+
+# __WORKS__INITIAL__STATE__
+class WorksInitialState(BaseModel):
+    api_url: str = Field(..., alias='apiUrl')
+    smart_url: str = Field(..., alias='smartUrl')
+
+
+# __COMPLAINT__INITIAL__STATE__
+class ComplaintInitialState(BaseModel):
+    api_url: str = Field(..., alias='apiUrl')
+
+
 # __ALL__INITIAL__STATES__
 class EUserAllInitialStates(BaseModel):
-    mom_said_yes: MomSaidYesInitialState = Field(..., alias='momSaidYesInitialState')
-    survey_form: SurveyFormInitialState = Field(..., alias='surveyFormInitialState')
-    user_start_page: UserStartPageInitialState = Field(..., alias='userStartPage')
+    survey_form: SurveyFormInitialState = Field(..., alias='__SURVEY_FORM_INITIAL_STATE__')
+    mom_said_yes: MomSaidYesInitialState = Field(..., alias='__MOM_SAID_YES__INITIAL__STATE__')
+    user_start_page: UserStartPageInitialState = Field(..., alias='__USER__START__PAGE__INITIAL__STATE__')
+    talk: TalkInitialState = Field(..., alias='__TALK__INITIAL__STATE__')
+    talk_stub: str = Field(..., alias='__TALK__STUB__INITIAL__STATE__')
+    media_widget: MediaWidgetInitialState = Field(..., alias='__MEDIA_WIDGET__INITIAL__STATE__')
+    public_clubs: PublicClubsInitialState = Field(..., alias='__PUBLIC__CLUBS__INITIAL__STATE__')
+    api_urls: ApiUrls = Field(..., alias='apiUrls')
+    works: WorksInitialState = Field(..., alias='__WORKS__INITIAL__STATE__')
+    complaint: ComplaintInitialState = Field(..., alias='__COMPLAINT__INITIAL__STATE__')
