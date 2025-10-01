@@ -12,3 +12,7 @@ class BadStatusCode(Exception):
 
 class TeacherPermissionDenied(Exception):
     pass
+
+
+class NoAuth(Exception):
+    pass
