@@ -62,7 +62,7 @@ async def registration_login(message: Message, l10n: FluentLocalization, state: 
 
 
 @router.message(st.Registration.password)
-async def registration_login(message: Message, l10n: FluentLocalization, state: FSMContext):
+async def registration_password(message: Message, l10n: FluentLocalization, state: FSMContext):
     await state.update_data(password=message.text)
     data = await state.get_data()
     em_client = StudentClient(**data)
