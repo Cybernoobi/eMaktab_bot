@@ -128,10 +128,10 @@ class UserStartPageInitialState(BaseModel):
                         smart_work_info: Any = Field(..., alias='smartWorkInfo')
                         subject: _BasicSubjectInfo
                         important_works: list[str] = Field(..., alias='importantWorks')
-                        homework: Homework
-                        smart_homeworks: list[SmartHomework] = Field(..., alias='smartHomeworks')
+                        homework: Homework | None
+                        smart_homeworks: list[SmartHomework] | list = Field(..., alias='smartHomeworks')
                         has_attachment: bool = Field(..., alias='hasAttachment')
-                        work_marks: list[_BasicWorkMarkInfo] = Field(..., alias='workMarks')
+                        work_marks: list[_BasicWorkMarkInfo] | list = Field(..., alias='workMarks')
                         is_empty: bool = Field(..., alias='isEmpty')
                         comment: Any
 
@@ -160,7 +160,7 @@ class UserStartPageInitialState(BaseModel):
 
     class UserMarks(BaseModel):
         class Child(_IdsInfo):
-            class Marks(_BasicWorkMarkInfo):
+            class Mark(_BasicWorkMarkInfo):
                 class Subject(_BasicSubjectInfo):
                     subject_mood: Any = Field(..., alias='subjectMood')
 
@@ -181,7 +181,7 @@ class UserStartPageInitialState(BaseModel):
                 analytics_period: Any = Field(..., alias='analyticsPeriod')
 
             ratings_marks_info: Any = Field(..., alias='ratingsMarksInfo')
-            marks: list
+            marks: list[Mark]
             marks_indicators: list = Field(..., alias='marksIndicators')
 
         children: list[Child]
