@@ -27,7 +27,7 @@ main-msg =
 main-btn =
     🎩 Profil
     ⌛ Oxirgi baholashlar
-    📌 Dars jadvali (ishlab chiqilmoqda)
+    📌 Dars jadvali
     ⚙️ Sozlamalar
 
 unknown-error-msg =
@@ -36,3 +36,9 @@ unknown-error-msg =
 
 re-registration-msg =
     Qayta ro'yxatdan o'tish uchun /start yozing
+
+unknown-message =
+    Sizning xabaringizni qayta ishlay olmadi
+
+in-dev =
+    Ushbu jamoa ishlab chiqilmoqda ⚙️

@@ -12,6 +12,7 @@ import keyboards.inline as kb_inline
 import keyboards.reply as kb_reply
 import utils.states as st
 from EmaktabAPI import StudentClient
+from EmaktabAPI.emaktab import localization_type
 from EmaktabAPI.exceptions import InvalidLoginOrPassword, UnknownError
 from utils.enums import Localization
 import database.utils as db
@@ -31,12 +32,12 @@ async def cmd_owner_hello(message: Message, l10n: FluentLocalization, state: FSM
     if await db.get_user_for_tg_id(message.from_user.id, 'tg'):
         if not await db.get_user_for_tg_id(message.from_user.id, 'em'):
             await state.set_state(st.Registration.login)
-            await message.answer(l10n.format_value(f"enter-login-msg"))
+            await message.answer(l10n.format_value(f"enter-login-msg"), reply_markup=ReplyKeyboardRemove())
             return
         await message.answer(l10n.format_value(f"main-msg"), reply_markup=kb_reply.main(l10n))
         return
 
-    await message.answer(l10n.format_value("hello-msg"))
+    await message.answer(l10n.format_value("hello-msg"), reply_markup=ReplyKeyboardRemove())
     await state.set_state(st.SetLang.select_lang)
     await message.answer(l10n.format_value("set-lang-msg").replace("\\", ""), reply_markup=kb_inline.set_lang(l10n))
 
@@ -68,7 +69,7 @@ async def registration_password(message: Message, l10n: FluentLocalization, stat
     em_client = StudentClient(**data)
 
     try:
-        await em_client.auth()
+        await em_client.init()
         await db.add_em_user(message.from_user.id, **data)
         await message.answer(l10n.format_value(f"main-msg"), reply_markup=kb_reply.main(l10n))
 
@@ -88,3 +89,36 @@ async def registration_password(message: Message, l10n: FluentLocalization, stat
 
     finally:
         await state.clear()
+
+
+@router.message()
+async def handle_message(message: Message, l10n: FluentLocalization):
+    commands = l10n.format_value("main-btn").split("\n")
+    if not message.text in commands:
+        await message.answer(l10n.format_value("unknown-message"))
+        return
+
+    elif message.text.startswith("🎩") or message.text.startswith("📌") or message.text.startswith("⚙️"):
+        await message.answer(l10n.format_value("in-dev"))
+        return
+
+    try:
+        em_db = await db.get_user_for_tg_id(message.from_user.id, 'em')
+        tg_db = await db.get_user_for_tg_id(message.from_user.id, 'tg')
+
+        em_client = await StudentClient(login=str(em_db.login), password=str(em_db.password), localization=tg_db.localization).init()
+        if message.text.startswith("⌛"):
+            marks = await em_client.get_marks()
+            result = ""
+            for mark in marks:
+                result += f"{mark.subject.name}: {mark.marks[0].value}\n"
+            await message.reply(result)
+
+    except Exception as e:
+        # await message.answer(l10n.format_value("unknown-error-msg",
+        #                                        {
+        #                                            "time": str(e.args[2] or "not set"),
+        #                                            "exceptClass": str(e.args[1].__class__.__name__) or str(e.__class__.__name__)
+        #                                        }))
+        await message.answer(l10n.format_value("re-registration-msg"))
+        raise e
