@@ -16,3 +16,7 @@ class TeacherPermissionDenied(Exception):
 
 class NoAuth(Exception):
     pass
+
+
+class UnknownError(Exception):
+    pass
