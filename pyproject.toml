@@ -23,7 +23,8 @@ dependencies = [
     "asyncpg",
     "sqlalchemy",
     "alembic",
-    "bs4 (>=0.0.2,<0.0.3)"
+    "bs4 (>=0.0.2,<0.0.3)",
+    "lxml (>=6.0.2,<7.0.0)"
 ]
 
 
