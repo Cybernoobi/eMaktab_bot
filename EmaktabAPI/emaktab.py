@@ -31,6 +31,19 @@ class Client:
         if not self.login or not self.password:
             raise exc.InvalidLoginOrPassword("Invalid login or password")
         await self.auth()
+        return self
+
+    async def _make_request(self, method: Literal["get", "post"], url: str, base_url=BASE_URL,
+                            params: dict | None = None, data: dict | FormData | None = None, *args,
+                            **kwargs) -> ClientResponse | None:
+        async with self.session as session:
+            base_url = f"https://{base_url}"
+            if method == "get":
+                async with session.get((base_url + url), params=params, data=data, *args, **kwargs) as response:
+                    return response
+            elif method == "post":
+                async with session.post((base_url + url), params=params, data=data, *args, **kwargs) as response:
+                    return response
 
     async def auth(self):
         auth_data = FormData()
@@ -50,7 +63,7 @@ class Client:
                 soup: lxml.HtmlElement = lxml.fromstring(await response.text())
 
                 if str(response.url) not in [f"https://{BASE_URL}/userfeed", f"https://{BASE_URL}/teacher"]:
-                    msg = soup.find('//div[@class="message "]').text.strip()
+                    msg = soup.xpath('//div[@class="message "]')[0].text.strip()
                     if msg in ["Неправильно указан пароль или логин. Попробуйте еще раз.", "Parol yoki login notoʻgʻri koʻrsatilgan. Qaytadan urinib koʻring."]:
                         raise InvalidLoginOrPassword("Invalid login or password")
 
@@ -87,6 +100,7 @@ class Client:
                 self.auth_token = search_cookie(response, "UZDnevnikAuth_a")
                 self.auth_l = search_cookie(response, "UZDnevnikAuth_l")
                 self.user = EUserSchema(**dnevnik["user"])
+                self.user_initial_states = states_info
 
                 return True
 
