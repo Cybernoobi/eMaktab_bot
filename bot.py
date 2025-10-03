@@ -35,9 +35,9 @@ async def main():
 
     # start polling
     try:
+        # await logger.ainfo("Initializing database...")
+        # await init_db()
         await dp.start_polling(bot, skip_updates=False) # Don't skip updates, if your bot will process payments or other important stuff
-        await logger.ainfo("Initializing database...")
-        await init_db()
     finally:
         await bot.session.close()
 
