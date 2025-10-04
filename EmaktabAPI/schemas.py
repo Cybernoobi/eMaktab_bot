@@ -165,7 +165,7 @@ class UserStartPageInitialState(BaseModel):
                     subject_mood: Any = Field(..., alias='subjectMood')
 
                 class Mark(_BasicMarkInfo):
-                    max_value: Any = Field(..., alias='maxValue')
+                    max_value: None | str = Field(..., alias='maxValue')
 
                 date: datetime
                 lesson_date: datetime = Field(..., alias='lessonDate')

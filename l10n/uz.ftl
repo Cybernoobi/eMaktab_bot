@@ -42,3 +42,6 @@ unknown-message =
 
 in-dev =
     Ushbu jamoa ishlab chiqilmoqda ⚙️
+
+marks-text =
+    {$time} uchun baholar:

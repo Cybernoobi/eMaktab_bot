@@ -1,3 +1,5 @@
+from datetime import datetime, timezone, timedelta
+
 import structlog
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
@@ -14,6 +16,8 @@ import utils.states as st
 from EmaktabAPI import StudentClient
 from EmaktabAPI.emaktab import localization_type
 from EmaktabAPI.exceptions import InvalidLoginOrPassword, UnknownError
+from EmaktabAPI.schemas import UserStartPageInitialState
+from utils import mood_to_emoji
 from utils.enums import Localization
 import database.utils as db
 from fluent_loader import L10N_MAPPING
@@ -92,7 +96,7 @@ async def registration_password(message: Message, l10n: FluentLocalization, stat
 
 
 @router.message()
-async def handle_message(message: Message, l10n: FluentLocalization):
+async def handle_message(message: Message, l10n: FluentLocalization, state: FSMContext):
     commands = l10n.format_value("main-btn").split("\n")
     if not message.text in commands:
         await message.answer(l10n.format_value("unknown-message"))
@@ -106,13 +110,31 @@ async def handle_message(message: Message, l10n: FluentLocalization):
         em_db = await db.get_user_for_tg_id(message.from_user.id, 'em')
         tg_db = await db.get_user_for_tg_id(message.from_user.id, 'tg')
 
-        em_client = await StudentClient(login=str(em_db.login), password=str(em_db.password), localization=tg_db.localization).init()
+        em_client = await StudentClient(login=str(em_db.login), password=str(em_db.password),
+                                        localization=tg_db.localization).init()
         if message.text.startswith("⌛"):
-            marks = await em_client.get_marks()
+            dates: dict[str, list[UserStartPageInitialState.UserMarks.Child.Mark]] = {}
             result = ""
-            for mark in marks:
-                result += f"{mark.subject.name}: {mark.marks[0].value}\n"
+            for mark in await em_client.get_marks():
+                date = mark.date.astimezone(timezone(timedelta(hours=5), "Tashkent")).strftime("%d.%m.%Y")
+                if not dates.get(date):
+                    dates[date] = []
+                dates[date].append(mark)
+
+            for time, marks in dates.items():
+                text = l10n.format_value("marks-text", {"time": time}) + "\n<pre>"
+                for m in marks:
+                    max_value = "/"+m.marks[0].max_value if m.marks[0].max_value else ""
+                    text += f"{mood_to_emoji(m.marks[0].mood.lower())}{m.subject.name}: {m.marks[0].value}{max_value} ({m.short_mark_type_text})\n"
+
+                result += text + "</pre>\n"
+            # print(dates)
             await message.reply(result)
+
+    except InvalidLoginOrPassword:
+        await message.answer(l10n.format_value("incorrect-login-or-password-msg"))
+        await state.set_state(st.Registration.login)
+        await message.answer(l10n.format_value("enter-login-msg"))
 
     except Exception as e:
         # await message.answer(l10n.format_value("unknown-error-msg",

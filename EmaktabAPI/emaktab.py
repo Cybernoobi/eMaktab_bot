@@ -16,8 +16,8 @@ localization_type = Literal["ru-RU", "uz-Latn-UZ"] | str
 
 class Client:
     def __init__(self, login: str, password: str, localization: localization_type):
-        self.session = ClientSession(cookies={"Dnevnik_localization": localization})
-
+        self.session: ClientSession | None = None
+        self.localization = localization
         self.auth_token: str | None = None
         self.auth_l: str | None = None
 
@@ -28,6 +28,8 @@ class Client:
         self.user: EUserSchema | None = None
 
     async def init(self):
+        self.session = ClientSession(cookies={"Dnevnik_localization": self.localization})
+
         if not self.login or not self.password:
             raise exc.InvalidLoginOrPassword("Invalid login or password")
         await self.auth()

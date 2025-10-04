@@ -42,3 +42,6 @@ unknown-message =
 
 in-dev =
     Данная команда находится в разработке ⚙️
+
+marks-text =
+    Оценки за {$time}:
