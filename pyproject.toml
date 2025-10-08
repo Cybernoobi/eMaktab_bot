@@ -24,7 +24,8 @@ dependencies = [
     "sqlalchemy",
     "alembic",
     "bs4 (>=0.0.2,<0.0.3)",
-    "lxml (>=6.0.2,<7.0.0)"
+    "lxml (>=6.0.2,<7.0.0)",
+    "aiosqlite (>=0.21.0,<0.22.0)"
 ]
 
 
