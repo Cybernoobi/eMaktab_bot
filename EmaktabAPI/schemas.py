@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
 
 
 class ESchoolSchema(BaseModel):
@@ -52,13 +52,43 @@ class _BasicCurrentChildInfo(_IdsInfo):
     school_type: str = Field(..., alias='schoolType')
 
 
-class _UserBasicInfo(BaseModel):
+class _BasicAvatar(BaseModel):
+    avatar_url: str | None = Field(alias='avatarUrl', default='https://static.emaktab.uz/images/avatars/user/a.l.jpg')
+
+    @field_validator("avatar_url", mode="after")
+    def set_default_if_none(cls, v):
+        if v is None:
+            return "https://static.emaktab.uz/images/avatars/user/a.l.jpg"
+        return v
+
+
+class _BasicMediumAvatar(BaseModel):
+    avatar_medium_url: str | None = Field(alias='avatarMediumUrl',
+                                          default='https://static.emaktab.uz/images/avatars/user/a.s.jpg')
+
+    @field_validator("avatar_medium_url", mode="after")
+    def set_default_if_none(cls, v):
+        if v is None:
+            return "https://static.emaktab.uz/images/avatars/user/a.s.jpg"
+        return v
+
+
+class _BasicTeacherAvatar(BaseModel):
+    class_teacher_avatar_url: str | None = Field(..., alias='classTeacherAvatarUrl')
+
+    @field_validator("class_teacher_avatar_url", mode="after")
+    def set_default_if_none(cls, v):
+        if v is None:
+            return "https://static.emaktab.uz/images/avatars/user/a.l.jpg"
+        return v
+
+
+class _UserBasicInfo(_BasicAvatar):
     user_id: str = Field(..., alias='userId')
     person_id: str = Field(..., alias='personId')
     first_name: str = Field(..., alias='firstName')
     middle_name: str = Field(..., alias='middleName')
     last_name: str = Field(..., alias='lastName')
-    avatar_url: str = Field(..., alias='avatarUrl')
 
 
 class _IdAndType(BaseModel):
@@ -83,66 +113,73 @@ class _BasicSubjectInfo(BaseModel):
     knowledge_area: str = Field(..., alias='knowledgeArea')
 
 
+class _BasicLessonInfo(BaseModel):
+    class Hours(BaseModel):
+        start_hour: str = Field(..., alias='startHour')
+        start_minute: str = Field(..., alias='startMinute')
+        end_hour: str = Field(..., alias='endHour')
+        end_minute: str = Field(..., alias='endMinute')
+
+    class Homework(BaseModel):
+        id: Any
+        text: str
+        is_completed: bool = Field(..., alias='isCompleted')
+        work_is_attach_required: bool = Field(..., alias='workIsAttachRequired')
+        attachments: list
+        user_attachments: list = Field(..., alias='userAttachments')
+        lesson_id: Any = Field(..., alias='lessonId')
+
+    class SmartHomework(Homework):
+        pass
+
+    id: str
+    number: int
+    place: Any
+    start_time: datetime = Field(..., alias='startTime')
+    end_time: datetime = Field(..., alias='endTime')
+    hours: Hours
+    is_canceled: bool = Field(..., alias='isCanceled')
+    theme: str
+    meeting: Any
+    smart_work_info: Any = Field(..., alias='smartWorkInfo')
+    subject: _BasicSubjectInfo
+    important_works: list[str] = Field(..., alias='importantWorks')
+    homework: Homework | None
+    smart_homeworks: list[SmartHomework] | list = Field(..., alias='smartHomeworks')
+    has_attachment: bool = Field(..., alias='hasAttachment')
+    work_marks: list[_BasicWorkMarkInfo] | list = Field(..., alias='workMarks')
+    is_empty: bool = Field(..., alias='isEmpty')
+
+
+class _BasicDayInfo(BaseModel):
+    class DayHomeworksProgress(BaseModel):
+        total_lessons_with_homeworks_count: int = Field(
+            ..., alias='totalLessonsWithHomeworksCount'
+        )
+        completed_lessons_with_homeworks_count: int = Field(
+            ..., alias='completedLessonsWithHomeworksCount'
+        )
+
+    date: datetime
+    utc_offset: int = Field(..., alias='utcOffset')
+    has_important_work: bool = Field(..., alias='hasImportantWork')
+    day_homeworks_progress: DayHomeworksProgress = Field(
+        ..., alias='dayHomeworksProgress'
+    )
+    sor_sochs: list = Field(..., alias='sorSochs')
+    lessons: list
+
+
 # __USER__START__PAGE__INITIAL__STATE__
 class UserStartPageInitialState(BaseModel):
     class UserSchedule(BaseModel):
         class Child(_IdsInfo):
             class Schedule(BaseModel):
-                class Day(BaseModel):
-                    class DayHomeworksProgress(BaseModel):
-                        total_lessons_with_homeworks_count: int = Field(
-                            ..., alias='totalLessonsWithHomeworksCount'
-                        )
-                        completed_lessons_with_homeworks_count: int = Field(
-                            ..., alias='completedLessonsWithHomeworksCount'
-                        )
-
-                    class Lesson(BaseModel):
-                        class Hours(BaseModel):
-                            start_hour: str = Field(..., alias='startHour')
-                            start_minute: str = Field(..., alias='startMinute')
-                            end_hour: str = Field(..., alias='endHour')
-                            end_minute: str = Field(..., alias='endMinute')
-
-                        class Homework(BaseModel):
-                            id: Any
-                            text: str
-                            is_completed: bool = Field(..., alias='isCompleted')
-                            work_is_attach_required: bool = Field(..., alias='workIsAttachRequired')
-                            attachments: list
-                            user_attachments: list = Field(..., alias='userAttachments')
-                            lesson_id: Any = Field(..., alias='lessonId')
-
-                        class SmartHomework(Homework):
-                            pass
-
-                        id: str
-                        number: int
-                        place: Any
-                        start_time: datetime = Field(..., alias='startTime')
-                        end_time: datetime = Field(..., alias='endTime')
-                        hours: Hours
-                        is_canceled: bool = Field(..., alias='isCanceled')
-                        theme: str
-                        meeting: Any
-                        smart_work_info: Any = Field(..., alias='smartWorkInfo')
-                        subject: _BasicSubjectInfo
-                        important_works: list[str] = Field(..., alias='importantWorks')
-                        homework: Homework | None
-                        smart_homeworks: list[SmartHomework] | list = Field(..., alias='smartHomeworks')
-                        has_attachment: bool = Field(..., alias='hasAttachment')
-                        work_marks: list[_BasicWorkMarkInfo] | list = Field(..., alias='workMarks')
-                        is_empty: bool = Field(..., alias='isEmpty')
+                class Day(_BasicDayInfo):
+                    class Lesson(_BasicLessonInfo):
                         comment: Any
 
-                    date: datetime
-                    utc_offset: int = Field(..., alias='utcOffset')
-                    has_important_work: bool = Field(..., alias='hasImportantWork')
-                    day_homeworks_progress: DayHomeworksProgress = Field(
-                        ..., alias='dayHomeworksProgress'
-                    )
                     lessons: list[Lesson]
-                    sor_sochs: list = Field(..., alias='sorSochs')
 
                 class ChatStub(BaseModel):
                     jid: str
@@ -188,12 +225,11 @@ class UserStartPageInitialState(BaseModel):
         current_child: _BasicCurrentChildInfo = Field(..., alias='currentChild')
 
     class UserContext(BaseModel):
-        class ContextPerson(_IdsInfo, _UserBasicInfo):
-            class School(_BasicSchoolOrGroupInfo):
+        class ContextPerson(_IdsInfo, _UserBasicInfo, _BasicTeacherAvatar):
+            class School(_BasicAvatar, _BasicSchoolOrGroupInfo):
                 type: str
                 is_oo: bool = Field(..., alias='isOo')
                 is_npo_spo: bool = Field(..., alias='isNpoSpo')
-                avatar_url: str = Field(..., alias='avatarUrl')
                 region_ids: list[int] = Field(..., alias='regionIds')
 
             class Group(_BasicSchoolOrGroupInfo):
@@ -222,7 +258,7 @@ class UserStartPageInitialState(BaseModel):
             reporting_period_group: ReportingPeriodGroup = Field(
                 ..., alias='reportingPeriodGroup'
             )
-            class_teacher_avatar_url: str = Field(..., alias='classTeacherAvatarUrl')
+            # class_teacher_avatar_url: str | None = Field(..., alias='classTeacherAvatarUrl')
             class_teacher_name: str = Field(..., alias='classTeacherName')
             class_teacher_chat_id: str = Field(..., alias='classTeacherChatId')
             have_active_subscription: bool = Field(..., alias='haveActiveSubscription')
@@ -233,13 +269,18 @@ class UserStartPageInitialState(BaseModel):
             journal_link: str = Field(..., alias='journalLink')
             ratings_feed_widget: Any = Field(..., alias='ratingsFeedWidget')
 
+            # @field_validator("class_teacher_avatar_url", mode="after")
+            # def set_default_if_none(cls, v):
+            #     if v is None:
+            #         return "https://static.emaktab.uz/images/avatars/user/a.l.jpg"
+            #     return v
+
         class CurrentContextPerson(ContextPerson):
             pass
 
-        class UserContextInfo(_UserBasicInfo):
+        class UserContextInfo(_UserBasicInfo, _BasicMediumAvatar):
             sex: str
             name: str
-            avatar_medium_url: str = Field(..., alias='avatarMediumUrl')
             is_parent: bool = Field(..., alias='isParent')
             is_student: bool = Field(..., alias='isStudent')
             current_culture_code: str = Field(..., alias='currentCultureCode')
@@ -375,7 +416,7 @@ class MomSaidYesInitialState(BaseModel):
 # __TALK__INITIAL__STATE__
 class TalkInitialState(BaseModel):
     class User(BaseModel):
-        avatar_large: str = Field(..., alias='avatarLarge')
+        avatar_large: str | None = Field(..., alias='avatarLarge')
         irrelevant: bool
         created: bool
         sex: str
@@ -392,7 +433,7 @@ class TalkInitialState(BaseModel):
         type: str
         name: str
         short_name: str = Field(..., alias='shortName')
-        avatar: str
+        avatar: str | None
         avatar_background: Any = Field(..., alias='avatarBackground')
         unknown: bool
         roles: list[str]
@@ -403,6 +444,18 @@ class TalkInitialState(BaseModel):
         subjects: Any
         profile_url: str = Field(..., alias='profileUrl')
         is_dnevnik_expert: bool = Field(..., alias='isDnevnikExpert')
+
+        @field_validator("avatar_large", mode="after")
+        def set_default_if_none(cls, v):
+            if v is None:
+                return "https://static.emaktab.uz/images/avatars/user/a.l.jpg"
+            return v
+
+        @field_validator("avatar", mode="after")
+        def _set_default_if_none(cls, v):
+            if v is None:
+                return "https://static.emaktab.uz/images/avatars/user/a.m.jpg"
+            return v
 
     class Urls(BaseModel):
         messenger_url: str = Field(..., alias='messengerUrl')
@@ -530,3 +583,26 @@ class EUserAllInitialStates(BaseModel):
     api_urls: ApiUrls = Field(..., alias='apiUrls')
     works: WorksInitialState = Field(..., alias='__WORKS__INITIAL__STATE__')
     complaint: ComplaintInitialState = Field(..., alias='__COMPLAINT__INITIAL__STATE__')
+
+
+# api json returns
+class DairyDays(_BasicDayInfo):
+    class Lesson(_BasicLessonInfo):
+        class LogEntry(BaseModel):
+            lesson_id: str = Field(..., alias='lessonId')
+            author: Any
+            text: str
+            date: str
+            lesson_log_entry_value: str = Field(..., alias='lessonLogEntryValue')
+            full_name: str = Field(..., alias='fullName')
+
+        group_id: str = Field(..., alias='groupId')
+        log_entry: LogEntry | None = Field(..., alias='logEntry')
+        is_home_based_education: bool = Field(..., alias='isHomeBasedEducation')
+        chat_jid: str = Field(..., alias='chatJid')
+        teacher_peer_id: Any = Field(..., alias='teacherPeerId')
+        url: str
+        parent_url: str = Field(..., alias='parentUrl')
+
+    behavior_notes: list = Field(..., alias='behaviorNotes')
+    lessons: list[Lesson]
