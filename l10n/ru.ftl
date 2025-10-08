@@ -26,7 +26,7 @@ main-msg =
 
 main-btn =
     🎩 Профиль
-    ⌛ Недавние оценки
+    ⌛ Оценки
     📌 Расписание уроков
     ⚙️ Настройки
 
@@ -43,5 +43,20 @@ unknown-message =
 in-dev =
     Данная команда находится в разработке ⚙️
 
+marks-msg =
+    Какие оценки вы хотите получить?
+
+marks-btn =
+    Недавние | get_recent_marks
+    Выбрать день | get_marks
+
 marks-text =
     Оценки за {$time}:
+
+profile-msg =
+    Ф.И.О: <code>{$full_name}</code>
+    Школа: <code>{$school}</code>
+    Класс: <code>{$edu_class}</code>
+    Возраст: <code>{$age}</code>
+    Классный руководитель: <code>{$teacher}</code>
+

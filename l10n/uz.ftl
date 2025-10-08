@@ -26,7 +26,7 @@ main-msg =
 
 main-btn =
     🎩 Profil
-    ⌛ Oxirgi baholashlar
+    ⌛ Baholar
     📌 Dars jadvali
     ⚙️ Sozlamalar
 
@@ -43,5 +43,19 @@ unknown-message =
 in-dev =
     Ushbu jamoa ishlab chiqilmoqda ⚙️
 
+marks-msg =
+    Qanday baholarni olishni xohlaysiz?
+
+marks-btn =
+    Yaqindiga | get_recent_marks
+    Kunni tanlash | get_marks
+
 marks-text =
     {$time} uchun baholar:
+
+profile-msg =
+    F.I.O: <code>{$full_name}</code>
+    Maktab: <code>{$school}</code>
+    Sinf: <code>{$edu_class}</code>
+    Yosh: <code>{$age}</code>
+    Sinf o'qituvchisi: <code>{$teacher}</code>

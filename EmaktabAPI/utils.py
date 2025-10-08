@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timedelta
 
 from aiohttp import ClientResponse
 
@@ -66,13 +67,13 @@ def extract_js_vars_to_json(code) -> str:
         # quoted_content = KEY_QUOTING_REGEX.sub(r'\1"\2":', content)
 
         # Регулярное выражение для поиска ключей: (\s+)([a-zA-Z_][\w]*)\s*:
-        regex = r'(\s+)([a-zA-Z_][\w]*)\s*:'
+        reg = r'(\s+)([a-zA-Z_][\w]*)\s*:'
 
         # Замена: \1 (отступ) + " + \2 (ключ) + " + :
-        replacement = r'\1"\2":'
+        rep = r'\1"\2":'
 
         # Выполняем замену с флагом re.MULTILINE для обработки каждой строки
-        quoted_content = re.sub(regex, replacement, content)
+        quoted_content = re.sub(reg, rep, content)
 
         # Снова собираем весь блок
         # + suffix
@@ -96,3 +97,42 @@ def extract_js_vars_to_json(code) -> str:
     code = code[:3].replace(" ", "") + code[3:-1].replace(", }", "}") + "}"
 
     return code
+
+
+def get_current_week_bounds(now: datetime = None) -> dict[str, int]:
+    """
+    Возвращает словарь с временем начала (startTime) и окончания (endTime) текущей недели.
+    Неделя считается с понедельника.
+
+    :return: dict: {'startTime': datetime, 'endTime': datetime}
+    """
+    now = now or datetime.now()
+
+    # 1. Рассчитываем день недели по стандарту ISO:
+    #    понедельник - 1, воскресенье - 7.
+    #    weekday() возвращает: понедельник - 0, воскресенье - 6.
+    #    isoweekday() возвращает: понедельник - 1, воскресенье - 7.
+    day_of_week = now.isoweekday()
+
+    # 2. Вычисляем дату начала недели (Понедельник)
+    #    Вычитаем (day_of_week - 1) дней, чтобы попасть на понедельник.
+    days_to_subtract = day_of_week - 1
+    start_of_week_date = now.date() - timedelta(days=days_to_subtract)
+
+    # 3. Устанавливаем время начала недели: 00:00:00.000000 Понедельника.
+    start_time = datetime.combine(start_of_week_date, datetime.min.time())
+
+    # 4. Вычисляем дату конца недели (Воскресенье)
+    #    Прибавляем 6 дней к понедельнику.
+    end_of_week_date = start_of_week_date + timedelta(days=6)
+
+    # 5. Устанавливаем время окончания недели: 23:59:59.999999 Воскресенья.
+    #    (Или можно взять начало следующего дня и вычесть одну микросекунду,
+    #     но этот способ проще для получения последней секунды дня).
+    end_time = datetime.combine(end_of_week_date, datetime.max.time())
+
+    return {
+        'start_date': int(start_time.timestamp()),
+        'finish_date': int(end_time.timestamp()),
+        'timestamp': int(now.timestamp())
+    }

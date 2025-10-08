@@ -1,6 +1,7 @@
 from typing import Literal
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from utils.enums import LocalizationLiteral
 from .models import TelegramUser, eMaktabUser, async_session
@@ -46,6 +47,10 @@ async def get_user_for_tg_id(user_id: int, fileter: Literal['tg', 'em']) -> Tele
             user = await session.scalar(select(TelegramUser).where(TelegramUser.telegram_id == user_id))
 
         elif fileter == 'em':
-            user = await session.scalar(select(eMaktabUser).where(eMaktabUser.telegram_id == user_id))
+            user = await session.scalar(
+                select(eMaktabUser)
+                .options(selectinload(eMaktabUser.telegram_user))
+                .where(eMaktabUser.telegram_id == user_id)
+            )
 
         return user
