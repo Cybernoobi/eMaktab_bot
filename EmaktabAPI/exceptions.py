@@ -20,3 +20,7 @@ class NoAuth(Exception):
 
 class UnknownError(Exception):
     pass
+
+
+class GetCaptchaError(Exception):
+    pass
