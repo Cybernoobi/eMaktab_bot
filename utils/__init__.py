@@ -3,6 +3,7 @@ def remove_prefix(text, prefix):
         return text[len(prefix):]
     return text  # or whatever
 
+
 def mood_to_emoji(mood: str) -> str:
     return {
         "good": "🟢",
