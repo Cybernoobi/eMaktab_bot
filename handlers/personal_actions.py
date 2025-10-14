@@ -45,6 +45,14 @@ async def cmd_owner_hello(message: Message, l10n: FluentLocalization, state: FSM
     await state.set_state(st.SetLang.select_lang)
     await message.answer(l10n.format_value("set-lang-msg").replace("\\", ""), reply_markup=kb_inline.set_lang(l10n))
 
+@router.message(Command("password"))
+async def get_password(message: Message):
+    user = await db.get_user_for_tg_id(message.from_user.id, 'em')
+    await message.reply(f"<tg-spoiler>{user.password}</tg-spoiler>")
+
+@router.message(Command("logout"))
+async def logout(message: Message):
+    pass
 
 @router.callback_query(st.SetLang.select_lang, F.data.startswith("set_lang_"))
 async def set_lang(callback: CallbackQuery, state: FSMContext):
@@ -114,10 +122,8 @@ async def handle_message(message: Message, l10n: FluentLocalization, state: FSMC
 
     try:
         em_db = await db.get_user_for_tg_id(message.from_user.id, 'em')
-        tg_db = await db.get_user_for_tg_id(message.from_user.id, 'tg')
-
         em_client = await StudentClient(login=str(em_db.login), password=str(em_db.password),
-                                        localization=tg_db.localization).init()
+                                        localization=em_db.localization).init()
 
         if message.text.startswith("📌"):
             try:
@@ -137,12 +143,12 @@ async def handle_message(message: Message, l10n: FluentLocalization, state: FSMC
                     await message.answer(result)
             except UnknownError as e:
                 await message.answer(l10n.format_value("unknown-error-msg",
-                                                                {
-                                                                    "time": str(e.args[2] or "not set"),
-                                                                    "exceptClass": str(
-                                                                        e.args[1].__class__.__name__) or str(
-                                                                        e.__class__.__name__)
-                                                                }))
+                                                       {
+                                                           "time": str(e.args[2] or "not set"),
+                                                           "exceptClass": str(
+                                                               e.args[1].__class__.__name__) or str(
+                                                               e.__class__.__name__)
+                                                       }))
                 raise e
 
 
@@ -170,10 +176,8 @@ async def handle_message(message: Message, l10n: FluentLocalization, state: FSMC
         await message.answer(l10n.format_value("unknown-error-msg",
                                                {
                                                    "time": str(e.args[2] or "not set"),
-                                                   "exceptClass": str(e.args[1].__class__.__name__) or str(
-                                                       e.__class__.__name__)
+                                                   "exceptClass": str(e.args[1].__class__.__name__)
                                                }))
-        # await message.answer(l10n.format_value("re-registration-msg"))
         raise e.args[1]
 
 
@@ -192,13 +196,14 @@ async def get_recent_marks(callback: CallbackQuery, l10n: FluentLocalization):
         dates[date].append(mark)
 
     for time, marks in dates.items():
-        text = l10n.format_value("marks-text", {"time": time}) + "\n<pre>"
+        text = l10n.format_value("marks-text", {"time": time}) + "\n<blockquote>"
         for m in marks:
             max_value = "/" + m.marks[0].max_value if m.marks[0].max_value else ""
             text += f"{mood_to_emoji(m.marks[0].mood.lower())}{m.subject.name}: {m.marks[0].value}{max_value} ({m.short_mark_type_text})\n"
 
-        result += text + "</pre>\n"
+        result += text + "</blockquote>\n"
     # print(dates)
+    await callback.answer()
     await callback.message.answer(result)
 
 
