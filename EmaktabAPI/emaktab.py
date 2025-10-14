@@ -27,7 +27,7 @@ class Client:
         self.user_initial_states: EUserAllInitialStates | None = None
         self.user: EUserSchema | None = None
 
-    async def init(self):
+    async def init(self) -> "Client":
         self.session = ClientSession(cookies={"Dnevnik_localization": self.localization})
 
         if not self.login or not self.password:
@@ -51,6 +51,8 @@ class Client:
         return response
 
     async def close(self):
+        if not self.session or self.session.closed:
+            return
         await self.session.close()
 
     async def auth(self):
@@ -162,6 +164,10 @@ class StudentClient(Client):
 
     async def get_schedule(self) -> list[DairyDays] | None:
         return await self.get_marks(**get_current_week_bounds())
+
+    async def init(self) -> "StudentClient":
+        await super().init()
+        return self
 
 
 class TeacherClient(Client):

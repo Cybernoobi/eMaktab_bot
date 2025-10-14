@@ -40,13 +40,13 @@ async def add_em_user(user_id: int, login: str, password: str, **kwargs) -> None
             await session.commit()
 
 
-async def get_user_for_tg_id(user_id: int, fileter: Literal['tg', 'em']) -> TelegramUser | eMaktabUser | None:
+async def get_user_for_tg_id(user_id: int, filter: Literal['tg', 'em']) -> TelegramUser | eMaktabUser | None:
     async with async_session() as session:
         user = None
-        if fileter == 'tg':
+        if filter == 'tg':
             user = await session.scalar(select(TelegramUser).where(TelegramUser.telegram_id == user_id))
 
-        elif fileter == 'em':
+        elif filter == 'em':
             user = await session.scalar(
                 select(eMaktabUser)
                 .options(selectinload(eMaktabUser.telegram_user))
@@ -54,3 +54,16 @@ async def get_user_for_tg_id(user_id: int, fileter: Literal['tg', 'em']) -> Tele
             )
 
         return user
+
+
+async def get_all_users(filter: Literal['tg', 'em']) -> list[TelegramUser] | list[eMaktabUser]:
+    if filter == "tg":
+        async with async_session() as session:
+            return await session.scalars(select(TelegramUser)).all()
+
+    elif filter == "em":
+        async with async_session() as session:
+            return await session.scalars(select(eMaktabUser)).all()
+
+    else:
+        raise ValueError("Invalid filter")
