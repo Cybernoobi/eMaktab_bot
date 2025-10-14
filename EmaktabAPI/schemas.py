@@ -234,9 +234,9 @@ class UserStartPageInitialState(BaseModel):
 
             class Group(_BasicSchoolOrGroupInfo):
                 is_criteria_journal_type: bool = Field(..., alias='isCriteriaJournalType')
-                class_teacher_user_id: str = Field(..., alias='classTeacherUserId')
-                class_teacher_chat_url: str = Field(..., alias='classTeacherChatUrl')
-                class_teacher_jid: str = Field(..., alias='classTeacherJid')
+                class_teacher_user_id: str | None = Field(..., alias='classTeacherUserId')
+                class_teacher_chat_url: str | None = Field(..., alias='classTeacherChatUrl')
+                class_teacher_jid: str | None = Field(..., alias='classTeacherJid')
                 group_staff_page_url: str = Field(..., alias='groupStaffPageUrl')
                 study_year: int = Field(..., alias='studyYear')
                 parallel: int
@@ -259,8 +259,8 @@ class UserStartPageInitialState(BaseModel):
                 ..., alias='reportingPeriodGroup'
             )
             # class_teacher_avatar_url: str | None = Field(..., alias='classTeacherAvatarUrl')
-            class_teacher_name: str = Field(..., alias='classTeacherName')
-            class_teacher_chat_id: str = Field(..., alias='classTeacherChatId')
+            class_teacher_name: str | None = Field(..., alias='classTeacherName')
+            class_teacher_chat_id: str | None = Field(..., alias='classTeacherChatId')
             have_active_subscription: bool = Field(..., alias='haveActiveSubscription')
             class_teacher_peer_id: Any = Field(..., alias='classTeacherPeerId')
             is_msy_popup_available: bool = Field(..., alias='isMsyPopupAvailable')
@@ -590,9 +590,9 @@ class DairyDays(_BasicDayInfo):
     class Lesson(_BasicLessonInfo):
         class LogEntry(BaseModel):
             lesson_id: str = Field(..., alias='lessonId')
-            author: Any
-            text: str
-            date: str
+            author: str | None
+            text: str | None
+            date: datetime
             lesson_log_entry_value: str = Field(..., alias='lessonLogEntryValue')
             full_name: str = Field(..., alias='fullName')
 
