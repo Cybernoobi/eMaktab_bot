@@ -7,7 +7,7 @@ authors = [
 ]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "aiogram",
     # "uvloop",  # windows not supported (uncomment if you are on Linux)
@@ -35,3 +35,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 package-mode = false
+
+[tool.poetry.group.gui.dependencies]
+pyside6 = "^6.10.0"
+
