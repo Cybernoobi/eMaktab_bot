@@ -37,5 +37,5 @@ build-backend = "poetry.core.masonry.api"
 package-mode = false
 
 [tool.poetry.group.gui.dependencies]
-pyside6 = "^6.10.0"
+flet = "^0.28.3"
 
