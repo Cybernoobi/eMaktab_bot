@@ -139,7 +139,7 @@ class _BasicLessonInfo(BaseModel):
     end_time: datetime = Field(..., alias='endTime')
     hours: Hours
     is_canceled: bool = Field(..., alias='isCanceled')
-    theme: str
+    theme: str | None
     meeting: Any
     smart_work_info: Any = Field(..., alias='smartWorkInfo')
     subject: _BasicSubjectInfo
