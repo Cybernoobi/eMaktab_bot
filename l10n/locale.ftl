@@ -1,14 +1,14 @@
 hello-msg =
-    <pre>[RU🇷🇺]
+    <blockquote>[RU🇷🇺]
     <b>Добро пожаловать!</b>
     Вы запустили бота eMaktab.Yordanchi
     <b>Этот бот не является официальным продуктом eMaktab!</b>
-    </pre>
-    <pre>[UZ🇺🇿]
+    </blockquote>
+    <blockquote>[UZ🇺🇿]
     <b>Assalomu alaykum!</b>
     eMaktab.Yordanchi
     <b>Ushbu bot eMaktab tizimining asosiy boti emas!</b>
-    </pre>
+    </blockquote>
 
 set-lang-msg =
     \[RU🇷🇺] Выберите язык
