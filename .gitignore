@@ -187,3 +187,4 @@ config.toml
 /test
 /log
 httpie-collection-emaktab.json
+/.zed
