@@ -7,7 +7,7 @@ from config_reader import get_config, DBConfig
 
 DATABASE_URL: DBConfig = get_config(model=DBConfig, root_key="database")
 
-engine = create_async_engine(DATABASE_URL.uri.get_secret_value(), echo=True)
+engine = create_async_engine(DATABASE_URL.uri.get_secret_value())
 async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -45,10 +45,24 @@ class eMaktabUser(Base):
     telegram_user: Mapped["TelegramUser"] = relationship("TelegramUser", back_populates="emaktab_users",
                                                          primaryjoin="eMaktabUser.telegram_id == TelegramUser.telegram_id")
 
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="t")
+
     @property
     def localization(self) -> str:
         """Получает localization напрямую из связанного TelegramUser."""
         return self.telegram_user.localization
+
+
+class UserSettings(Base):
+    __tablename__ = "users_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, ForeignKey(TelegramUser.telegram_id, ondelete="CASCADE"),
+                                             nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="f")
+    auto_up_activity: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="f")
+    auto_send_schedule: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="f")
+    auto_send_lessons: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="f")
 
 
 async def init_db():

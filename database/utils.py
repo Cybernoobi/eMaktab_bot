@@ -4,7 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from utils.enums import LocalizationLiteral
-from .models import TelegramUser, eMaktabUser, async_session
+from .models import TelegramUser, eMaktabUser, async_session, UserSettings
+
+Filter = Literal['tg', 'em']
 
 
 async def add_tg_user(user_id: int, username: str | None, full_name: str, localization: LocalizationLiteral) -> None:
@@ -26,6 +28,9 @@ async def add_tg_user(user_id: int, username: str | None, full_name: str, locali
                                      username=username,
                                      full_name=full_name,
                                      localization=localization))
+            session.add(UserSettings(
+                telegram_id=user_id
+            ))
             await session.commit()
 
 
@@ -40,7 +45,7 @@ async def add_em_user(user_id: int, login: str, password: str, **kwargs) -> None
             await session.commit()
 
 
-async def get_user_for_tg_id(user_id: int, filter: Literal['tg', 'em']) -> TelegramUser | eMaktabUser | None:
+async def get_user_for_tg_id(user_id: int, filter: Filter) -> TelegramUser | eMaktabUser | None:
     async with async_session() as session:
         user = None
         if filter == 'tg':
@@ -56,14 +61,15 @@ async def get_user_for_tg_id(user_id: int, filter: Literal['tg', 'em']) -> Teleg
         return user
 
 
-async def get_all_users(filter: Literal['tg', 'em']) -> list[TelegramUser] | list[eMaktabUser]:
-    if filter == "tg":
-        async with async_session() as session:
-            return await session.scalars(select(TelegramUser)).all()
+async def get_all_users(filter: Filter, only_id: bool = False) -> list[TelegramUser] | list[eMaktabUser]:
+    stmt = {
+        "tg": select(TelegramUser.telegram_id) if only_id else select(TelegramUser),
+        "em": select(eMaktabUser.telegram_id) if only_id else select(eMaktabUser)
+    }.get(filter, None)
 
-    elif filter == "em":
-        async with async_session() as session:
-            return await session.scalars(select(eMaktabUser)).all()
-
-    else:
+    if stmt is None:
         raise ValueError("Invalid filter")
+
+    async with async_session() as session:
+        result = await session.scalars(stmt)
+        return result.all()
