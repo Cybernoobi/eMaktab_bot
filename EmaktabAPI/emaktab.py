@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import lru_cache
 from typing import Literal
 
 import ujson
@@ -43,10 +44,13 @@ class Client:
             self.session = ClientSession(cookies={"Dnevnik_localization": self.localization})
 
         base_url = f"https://{base_url}"
+        cookie = {
+            "Dnevnik_localization": self.localization,
+            "UZDnevnikAuth_a": self.auth_token
+        }
 
         response = await getattr(self.session, method)((base_url + url), params=params, data=data,
-                                                       cookies={"Dnevnik_localization": self.localization,
-                                                                "UZDnevnikAuth_a": self.auth_token}, *args,
+                                                       cookies=cookie, *args,
                                                        **kwargs)
         return response
 
@@ -58,12 +62,12 @@ class Client:
     async def auth(self):
         # auth_data.add_field("Captcha.Input", 13830)
         # auth_data.add_field("Captcha.Id", "c8745a25-9d03-4fe5-9f0b-c300d910008b")
-        #
         # auth_data.add_field("exceededAttempts", False)
 
         auth_data = FormData()
         auth_data.add_field("login", self.login)
         auth_data.add_field("password", self.password)
+
 
         async with self.session:
             async with self.session.post(f"https://login.{BASE_URL}", data=auth_data) as response:

@@ -9,4 +9,4 @@ def mood_to_emoji(mood: str) -> str:
         "good": "🟢",
         "average": "🟡",
         "bad": "🔴"
-    }.get(mood)
+    }.get(mood.lower())

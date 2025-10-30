@@ -53,9 +53,26 @@ marks-btn =
 marks-text =
     {$time} uchun baholar:
 
+
+days-of-week =
+    DU, SE, ChO, PA, JU, ShA, YA
+
 profile-msg =
     F.I.O: <code>{$full_name}</code>
     Maktab: <code>{$school}</code>
     Sinf: <code>{$edu_class}</code>
     Yosh: <code>{$age}</code>
     Sinf o'qituvchisi: <code>{$teacher}</code>
+
+log-pass-msg =
+    <tg-spoiler>Login: {$login}
+    Parol: {$password}</tg-spoiler>
+
+date-select-msg =
+    Sanani tanlang
+
+date-selected-msg =
+    ✅ Вы выбрали дату: {$date}
+
+no-marks-msg =
+    O'sha kuni siz baho olmadingiz

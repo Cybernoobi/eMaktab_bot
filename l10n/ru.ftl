@@ -53,6 +53,13 @@ marks-btn =
 marks-text =
     Оценки за {$time}:
 
+marks-date-msg =
+    Выберите день по которой хотите узнать оценку
+    Пример: 19.10.2025
+
+days-of-week =
+    ПН, ВТ, СР, ЧТ, ПТ, СБ, ВС
+
 profile-msg =
     Ф.И.О: <code>{$full_name}</code>
     Школа: <code>{$school}</code>
@@ -60,3 +67,15 @@ profile-msg =
     Возраст: <code>{$age}</code>
     Классный руководитель: <code>{$teacher}</code>
 
+log-pass-msg =
+    <tg-spoiler>Логин: {$login}
+    Пароль: {$password}</tg-spoiler>
+
+date-select-msg =
+    Выберите дату
+
+date-selected-msg =
+    ✅ Вы выбрали дату: {$date}
+
+no-marks-msg =
+    В этот день вы не получили оценок
