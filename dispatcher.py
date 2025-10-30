@@ -1,7 +1,7 @@
 from aiogram import Dispatcher
 
 from fluent_loader import L10N_MAPPING
-from middlewares import L10nMiddleware
+from middlewares import L10nMiddleware, ChattingStatusMiddleware
 
 # init dispatcher
 dp = Dispatcher()
@@ -10,3 +10,7 @@ dp = Dispatcher()
 dp.message.outer_middleware(L10nMiddleware(l10n_mapping=L10N_MAPPING))
 dp.pre_checkout_query.outer_middleware(L10nMiddleware(l10n_mapping=L10N_MAPPING))
 dp.callback_query.outer_middleware(L10nMiddleware(l10n_mapping=L10N_MAPPING))
+
+# dp.message.outer_middleware(ChattingStatusMiddleware())
+# dp.pre_checkout_query.outer_middleware(ChattingStatusMiddleware())
+# dp.callback_query.outer_middleware(ChattingStatusMiddleware())

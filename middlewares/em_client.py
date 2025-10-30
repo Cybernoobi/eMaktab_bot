@@ -27,7 +27,7 @@ class EmaktabMiddleware(BaseMiddleware):
             password=str(user.password),
             localization=user.localization
         )
-        await em_client.init()
+        # await em_client.init()
 
         # Добавляем клиента в контекст данных
         data["em_client"] = em_client

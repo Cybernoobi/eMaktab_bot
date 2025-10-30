@@ -8,5 +8,5 @@ class IsRegisteredFilter(BaseFilter):
         self.is_owner = is_registered
 
     async def __call__(self, message: Message) -> bool:
-        users = [em_data.telegram_id for em_data in await get_all_users("em")]
+        users = [em_data for em_data in await get_all_users("em", only_id=True)]
         return message.from_user.id in users
