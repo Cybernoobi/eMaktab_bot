@@ -1,5 +1,8 @@
+import asyncio
 from typing import Literal
 import os
+
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 
 os.environ["CONFIG_FILE_PATH"] = r"..\config.toml"
 
@@ -17,7 +20,8 @@ parse_mode_list = ["Markdown", "MarkdownV2", "HTML"]
 
 # ---------- Глобальные переменные ----------
 bot_config: BotConfig = get_config(model=BotConfig, root_key="bot")
-bot = Bot(bot_config.token.get_secret_value())
+# bot = Bot(bot_config.token.get_secret_value())
+bot = Bot("6863662911:AAEe-sRO3fjvs6oGbWdmwYqroo_7WN_ov40")
 
 
 # ---------- Отправка сообщений ----------
@@ -258,7 +262,21 @@ def adaptive_app(page: ft.Page):
 
     page.go(page.route)
 
-
+# ---------- CLI ----------
+async def send_all(msg: str, ids: list[int] = None):
+    ids = ids or await get_all_users("em", only_id=True)
+    for chat_id in ids:
+        try:
+            await bot.send_message(chat_id, msg)
+        except TelegramBadRequest as e:
+            print("Пропускаем " + str(chat_id), e)
+            continue
+        except TelegramForbiddenError as e:
+            print("Бот заблокирован у пользователя " + str(chat_id), e)
+            continue
 # ---------- Запуск ----------
 if __name__ == '__main__':
-    ft.app(target=adaptive_app, host="0.0.0.0", port=8080, view=AppView.WEB_BROWSER)
+    # ft.app(target=main, host="0.0.0.0", port=8080, view=AppView.WEB_BROWSER)
+    asyncio.run(send_all("""
+Бот снова работает в штатном режиме.
+    """))
