@@ -269,7 +269,7 @@ async def send_all(msg: str, ids: list[int] = None):
     for chat_id in ids:
         try:
             bot_msg = await bot.send_message(chat_id, msg, parse_mode="HTML")
-            print(f"Успешно {chat_id}, {bot_msg.message_id=}")
+            print(f"Успешно {chat_id=}, {bot_msg.message_id=}")
         except TelegramBadRequest as e:
             print("Пропускаем " + str(chat_id), e)
             continue
