@@ -202,10 +202,10 @@ class UserStartPageInitialState(BaseModel):
                     subject_mood: Any = Field(..., alias='subjectMood')
 
                 class Mark(_BasicMarkInfo):
-                    max_value: None | str = Field(..., alias='maxValue')
+                    max_value: str | None = Field(..., alias='maxValue')
 
                 date: datetime
-                lesson_date: datetime = Field(..., alias='lessonDate')
+                lesson_date: datetime | None = Field(..., alias='lessonDate')
                 subject: Subject
                 mark_type: str = Field(..., alias='markType')
                 mark_type_text: str = Field(..., alias='markTypeText')
@@ -244,21 +244,17 @@ class UserStartPageInitialState(BaseModel):
             class ReportingPeriodGroup(_IdAndType):
                 class Period(_IdAndType):
                     number: int
-                    date_start: str = Field(..., alias='dateStart')
-                    date_finish: str = Field(..., alias='dateFinish')
+                    date_start: datetime = Field(..., alias='dateStart')
+                    date_finish: datetime = Field(..., alias='dateFinish')
                     study_year: int = Field(..., alias='studyYear')
                     is_current: bool = Field(..., alias='isCurrent')
 
                 periods: list[Period]
 
             user_age: int = Field(..., alias='userAge')
-
             school: School
             group: Group
-            reporting_period_group: ReportingPeriodGroup = Field(
-                ..., alias='reportingPeriodGroup'
-            )
-            # class_teacher_avatar_url: str | None = Field(..., alias='classTeacherAvatarUrl')
+            reporting_period_group: ReportingPeriodGroup = Field(..., alias='reportingPeriodGroup')
             class_teacher_name: str | None = Field(..., alias='classTeacherName')
             class_teacher_chat_id: str | None = Field(..., alias='classTeacherChatId')
             have_active_subscription: bool = Field(..., alias='haveActiveSubscription')
@@ -268,12 +264,6 @@ class UserStartPageInitialState(BaseModel):
             group_name: str = Field(..., alias='groupName')
             journal_link: str = Field(..., alias='journalLink')
             ratings_feed_widget: Any = Field(..., alias='ratingsFeedWidget')
-
-            # @field_validator("class_teacher_avatar_url", mode="after")
-            # def set_default_if_none(cls, v):
-            #     if v is None:
-            #         return "https://static.emaktab.uz/images/avatars/user/a.l.jpg"
-            #     return v
 
         class CurrentContextPerson(ContextPerson):
             pass
