@@ -21,6 +21,7 @@ class LogRenderer(StrEnum):
 class BotConfig(BaseModel):
     token: SecretStr
     owners: list
+    chat_id_for_logs: int
 
 
 class LogConfig(BaseModel):

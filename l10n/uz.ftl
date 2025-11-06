@@ -76,3 +76,12 @@ date-selected-msg =
 
 no-marks-msg =
     O'sha kuni siz baho olmadingiz
+
+error-bad-code-msg =
+    emaktab.uz sayti mavjud emas
+
+error-no-auth-msg =
+    Avtorizatsiyani yakunlab bo'lmadi. Biz allaqachon xato ustida ishlayapmiz
+
+error-unknown-msg =
+    Kutilmagan xatolik yuz berdi. Biz allaqachon xatolik ustida ishlayapmiz
