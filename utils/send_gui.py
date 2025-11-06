@@ -1,8 +1,9 @@
 import asyncio
+import time
 from typing import Literal
 import os
 
-from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
 
 os.environ["CONFIG_FILE_PATH"] = r"..\config.toml"
 
@@ -267,16 +268,31 @@ async def send_all(msg: str, ids: list[int] = None):
     ids = ids or await get_all_users("em", only_id=True)
     for chat_id in ids:
         try:
-            await bot.send_message(chat_id, msg)
+            bot_msg = await bot.send_message(chat_id, msg, parse_mode="HTML")
+            print(f"Успешно {chat_id}, {bot_msg.message_id=}")
         except TelegramBadRequest as e:
             print("Пропускаем " + str(chat_id), e)
             continue
         except TelegramForbiddenError as e:
             print("Бот заблокирован у пользователя " + str(chat_id), e)
             continue
+        except TelegramRetryAfter as e:
+            print(str(e.args[1]).split(" "))
+            timeout = int(str(e.args[1]).split(" ")[-1])
+            await asyncio.sleep(timeout)
+            await bot.send_message(chat_id, msg, parse_mode="HTML")
+        # finally:
+        #     await bot.close()
 # ---------- Запуск ----------
 if __name__ == '__main__':
     # ft.app(target=main, host="0.0.0.0", port=8080, view=AppView.WEB_BROWSER)
     asyncio.run(send_all("""
-Бот снова работает в штатном режиме.
+Бот был обновлён до версии beta 0.0.3
+Если обнаружите ошибки пожалуйста сообщите разработчика @Cybernoobi
+
+Что изменилось?<blockquote>
+1. Добавлена команда /me
+2. Кнопка "Выбрать день" в "⌛️ Оценки" работает
+3. Ошибки теперь отправляются автоматически разработчику
+</blockquote>
     """))
