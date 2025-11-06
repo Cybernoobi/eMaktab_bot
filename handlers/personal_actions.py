@@ -47,7 +47,6 @@ async def cmd_owner_hello(message: Message, l10n: FluentLocalization, state: FSM
     await message.answer(l10n.format_value(f"main-msg"), reply_markup=kb_reply.main(l10n))
 
 
-
 @router.callback_query(st.SetLang.select_lang, F.data.startswith("set_lang_"))
 async def set_lang(callback: CallbackQuery, state: FSMContext):
     await callback.answer()

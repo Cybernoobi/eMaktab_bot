@@ -1,3 +1,5 @@
+import logging
+import traceback
 from datetime import datetime
 from functools import lru_cache
 from typing import Literal
@@ -26,6 +28,7 @@ class Client:
         self.password = password
 
         self.user_initial_states: EUserAllInitialStates | None = None
+        self.user_context: UserStartPageInitialState.UserContext.CurrentContextPerson | None = None
         self.user: EUserSchema | None = None
 
     async def init(self) -> "Client":
@@ -34,6 +37,7 @@ class Client:
         if not self.login or not self.password:
             raise exc.InvalidLoginOrPassword("Invalid login or password")
         await self.auth()
+        self.user_context = self.user_initial_states.user_start_page.user_context.current_context_person
         return self
 
     async def _make_request(self, method: Literal["get", "post"], url: str, base_url=BASE_URL,
@@ -68,7 +72,6 @@ class Client:
         auth_data.add_field("login", self.login)
         auth_data.add_field("password", self.password)
 
-
         async with self.session:
             async with self.session.post(f"https://login.{BASE_URL}", data=auth_data) as response:
                 if response.status != 200:
@@ -100,7 +103,8 @@ class Client:
                     with open(f"log/{time}.html", "wb") as f:
                         f.write(lxml.tostring(soup))
                     raise exc.NoAuth(
-                        f"For some reason, the authorization failed. Link: {response.url}. Log in /log/{time}.html")
+                        f"For some reason, the authorization failed. Link: {response.url}. Log in /log/{time}.html",
+                        f"./log/{time}.html")
 
                 dnevnik = ujson.loads(soup.xpath('/html/head/script[4]')[0].text.strip()[13:-1])
                 states_info: EUserAllInitialStates | None = None
@@ -108,15 +112,17 @@ class Client:
                 for element in soup.xpath('/html/body/script'):
                     if not element.text:
                         continue
+
                     if element.text.strip().startswith("window.__S"):
                         try:
                             json_data = extract_js_vars_to_json(element.text)
                             states_info = EUserAllInitialStates(**ujson.loads(json_data))
                         except Exception as e:
                             time = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+                            text = bytes(f"<pre>TRACEBACK:\n{traceback.format_exc()}</pre>", "utf-8")
                             with open(f"log/{time}.html", "wb") as f:
-                                f.write(lxml.tostring(soup))
-                            raise exc.UnknownError("Unknown error", e, time)
+                                f.write(text+lxml.tostring(soup))
+                            raise exc.UnknownError("Unknown error", e, time, f"./log/{time}.html")
 
                 if not states_info:
                     time = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
@@ -168,6 +174,9 @@ class StudentClient(Client):
 
     async def get_schedule(self) -> list[DairyDays] | None:
         return await self.get_marks(**get_current_week_bounds())
+
+    async def get_current_context(self) -> UserStartPageInitialState.UserContext.CurrentContextPerson:
+        return self.user_initial_states.user_start_page.user_context.current_context_person
 
     async def init(self) -> "StudentClient":
         await super().init()

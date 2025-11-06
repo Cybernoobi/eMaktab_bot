@@ -173,8 +173,10 @@ async def get_recent_marks(callback: CallbackQuery, l10n: FluentLocalization, em
     for time, marks in dates.items():
         text = l10n.format_value("marks-text", {"time": time}) + "\n<blockquote>"
         for m in marks:
+            short_mark_type_text = m.short_mark_type_text if not m.short_mark_type_text.lower().startswith(
+                "label") else m.mark_type_text
             max_value = "/" + m.marks[0].max_value if m.marks[0].max_value else ""
-            text += f"{mood_to_emoji(m.marks[0].mood)}{m.subject.name}: {m.marks[0].value}{max_value} ({m.short_mark_type_text})\n"
+            text += f"{mood_to_emoji(m.marks[0].mood)}{m.subject.name}: {m.marks[0].value}{max_value} ({short_mark_type_text})\n"
 
         result += text + "</blockquote>\n"
 
@@ -193,7 +195,7 @@ async def get_marks(callback: CallbackQuery, l10n: FluentLocalization, em_client
 
 @router.callback_query(F.data.startswith("mark:calendar:"))
 async def cb_calendar(callback: CallbackQuery, l10n: FluentLocalization):
-    _, year, month = callback.data.split(":")
+    _, _, year, month = callback.data.split(":")
     year, month = int(year), int(month)
     await callback.message.edit_text(
         "Выберите дату",
@@ -214,11 +216,12 @@ async def cb_day(callback: CallbackQuery, l10n: FluentLocalization, em_client: S
 
         if not days:
             await callback.message.answer(l10n.format_value("no-marks-msg"))
+            return
 
         result = ""
         marks = {}
         for day in days:
-            result += f"\n{l10n.format_value("marks-text", {"time": day.date.strftime('%d.%m.%Y')})}\n"
+            result += f"\n{l10n.format_value("marks-text", {"time": day.date.strftime('%d.%m.%Y')})}\n<blockquote>"
 
             for lesson in sorted(day.lessons, key=lambda x: x.number):
                 for mark in lesson.work_marks:
@@ -228,47 +231,26 @@ async def cb_day(callback: CallbackQuery, l10n: FluentLocalization, em_client: S
                         marks[lesson.subject.name] = [mark]
 
         for subject, markss in marks.items():
-            result += f"<blockquote>{subject}: "
+            result += f"{subject}: "
             text = ""
             for mark in markss:
                 for m in mark["marks"]:
                     text += f"{mood_to_emoji(m["mood"])}{m["value"]} "
-            result += text + "</blockquote>"
+            result += text + "\n"
 
-        await callback.message.edit_text(result)
+        await callback.message.edit_text(result + "</blockquote>")
 
     except UnknownError as e:
         await callback.message.answer(l10n.format_value("unknown-error-msg",
-                                                {
-                                                    "time": str(e.args[2] or "not set"),
-                                                    "exceptClass": str(e.args[1].__class__.__name__)
-                                                }))
+                                                        {
+                                                            "time": str(e.args[2] or "not set"),
+                                                            "exceptClass": str(e.args[1].__class__.__name__)
+                                                        }))
         await callback.message.answer(l10n.format_value("re-registration-msg"))
         raise e.args[1]
 
     finally:
         await callback.answer("")
-    # try:
-    #     em_db = await db.get_user_for_tg_id(callback.from_user.id, 'em')
-    #     em_client = StudentClient(login=str(em_db.login), password=str(em_db.password),
-    #                                     localization=em_db.localization)
-    #     if schedule := await em_client.get_schedule():
-    #         await callback.answer()
-    #         result = ""
-    #         for day in schedule:
-    #             result += f"\n📌 {day.date.strftime('%d.%m.%Y')}:\n"
-    #
-    #             for lesson in sorted(day.lessons, key=lambda x: x.number):
-    #                 result += f"{lesson.number}. {lesson.subject.name}\n"
-    #         await callback.message.answer(result)
-    # except UnknownError as e:
-    #     await callback.answer(l10n.format_value("unknown-error-msg",
-    #                                             {
-    #                                                 "time": str(e.args[2] or "not set"),
-    #                                                 "exceptClass": str(e.args[1].__class__.__name__) or str(e.__class__.__name__)
-    #                                             }))
-    #     await callback.message.answer(l10n.format_value("re-registration-msg"))
-    #     raise e
 
 
 # === Команда /calendar ===
